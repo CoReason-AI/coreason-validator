@@ -15,7 +15,3 @@ Enforces structural integrity across the entire CoReason ecosystem
 __version__ = "0.1.0"
 __author__ = "Gowtham A Rao"
 __email__ = "gowtham.rao@coreason.ai"
-
-from .main import hello_world
-
-__all__ = ["hello_world"]
