@@ -1,9 +1,11 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, constr
+from pydantic import ConfigDict, Field, constr
+
+from coreason_validator.schemas.base import CoReasonBaseModel
 
 
-class AgentManifest(BaseModel):
+class AgentManifest(CoReasonBaseModel):
     """
     Defines the configuration for a CoReason Agent.
     """
