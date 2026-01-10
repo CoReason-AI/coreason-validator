@@ -1,12 +1,14 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, ConfigDict, Field, constr
 
 
 class AgentManifest(BaseModel):
     """
     Defines the configuration for a CoReason Agent.
     """
+
+    model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
 
     schema_version: Literal["1.0"] = "1.0"
     name: constr(pattern=r"^[a-z0-9-]+$") = Field(  # type: ignore
