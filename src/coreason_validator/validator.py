@@ -23,7 +23,7 @@ def sanitize_inputs(data: Any) -> Any:
     Recursively sanitizes input data.
     - Trims whitespace from strings.
     - Strips null bytes ('\0') from strings.
-    - Handles nested dictionaries and lists.
+    - Handles nested dictionaries, lists, tuples, and sets.
     """
     if isinstance(data, str):
         # Strip null bytes and trim whitespace
@@ -32,6 +32,10 @@ def sanitize_inputs(data: Any) -> Any:
         return {k: sanitize_inputs(v) for k, v in data.items()}
     if isinstance(data, list):
         return [sanitize_inputs(i) for i in data]
+    if isinstance(data, tuple):
+        return tuple(sanitize_inputs(i) for i in data)
+    if isinstance(data, set):
+        return {sanitize_inputs(i) for i in data}
     return data
 
 
