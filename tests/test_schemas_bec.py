@@ -112,3 +112,85 @@ def test_bec_manifest_unexpected_validation_error() -> None:
 
     # Check that the error message contains our expected string
     assert "Invalid JSON Schema: Unexpected boom" in str(excinfo.value)
+
+
+def test_bec_manifest_complex_nested_schema() -> None:
+    """
+    Test that a complex, deeply nested JSON schema is accepted.
+    """
+    complex_schema = {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+            "meta": {
+                "type": "object",
+                "properties": {
+                    "version": {"type": "string", "pattern": "^\\d+\\.\\d+$"},
+                    "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+                },
+                "required": ["version"],
+            },
+            "data": {
+                "oneOf": [
+                    {"type": "string", "maxLength": 100},
+                    {"type": "number", "minimum": 0},
+                ]
+            },
+        },
+        "required": ["meta", "data"],
+        "additionalProperties": False,
+    }
+
+    case = TestCase(
+        id="test-complex",
+        prompt="Generate complex data.",
+        expected_output_structure=complex_schema,
+    )
+    assert case.expected_output_structure == complex_schema
+
+
+def test_bec_manifest_invalid_schema_regex() -> None:
+    """
+    Test that a schema with an invalid regex pattern raises a ValidationError.
+    This ensures that jsonschema.check_schema() is actually running logic checks.
+    """
+    # '++' is an invalid regex in many contexts if not escaped,
+    # but jsonschema is quite strict. Let's use a definitely invalid one like unbalanced parens.
+    invalid_regex_schema = {
+        "type": "string",
+        "pattern": "(unclosed group",
+    }
+
+    with pytest.raises(ValidationError) as excinfo:
+        TestCase(
+            id="test-invalid-regex",
+            prompt="Fail me regex.",
+            expected_output_structure=invalid_regex_schema,
+        )
+
+    # The error from jsonschema usually mentions 'regex' or the pattern issues
+    assert "Invalid JSON Schema" in str(excinfo.value)
+
+
+def test_bec_manifest_unicode_robustness() -> None:
+    """
+    Test that high-bit Unicode characters are handled correctly in text fields.
+    """
+    unicode_str = "こんにちは 🌍 world"
+    case = TestCase(
+        id=f"test-{unicode_str}",
+        prompt=unicode_str,
+        context_files=[f"{unicode_str}.txt"],
+    )
+
+    manifest = BECManifest(corpus_id="corpus-unicode", cases=[case])
+
+    # Ensure data is preserved exactly
+    assert manifest.cases[0].prompt == unicode_str
+    assert manifest.cases[0].id == f"test-{unicode_str}"
+
+    # Ensure hashing works (deterministically)
+    h1 = manifest.canonical_hash()
+    h2 = manifest.canonical_hash()
+    assert h1 == h2
+    assert len(h1) == 64
