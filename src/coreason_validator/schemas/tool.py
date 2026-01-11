@@ -1,10 +1,12 @@
 import re
 from typing import Any, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
+
+from coreason_validator.schemas.base import CoReasonBaseModel
 
 
-class ToolCall(BaseModel):
+class ToolCall(CoReasonBaseModel):
     """
     Defines the strict inputs for coreason-mcp.
     Ensures type strictness and prevents SQL injection.
