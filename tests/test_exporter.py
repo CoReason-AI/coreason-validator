@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 
+from coreason_validator.schemas.agent import AgentManifest
 from coreason_validator.utils.exporter import export_json_schemas
 
 
@@ -78,4 +79,77 @@ def test_export_json_schemas_handles_write_error(tmp_path: Path, monkeypatch: py
     monkeypatch.setattr("builtins.open", mock_open)
 
     with pytest.raises(PermissionError):
+        export_json_schemas(output_dir)
+
+
+def test_export_verifies_nested_definitions(tmp_path: Path) -> None:
+    """
+    Test that the exported schema for TopologyGraph includes nested definitions
+    and references for TopologyNode, confirming complex structure support.
+    """
+    output_dir = tmp_path / "schemas"
+    export_json_schemas(output_dir)
+
+    topology_path = output_dir / "topology.schema.json"
+    content = json.loads(topology_path.read_text(encoding="utf-8"))
+
+    # Pydantic V2 uses $defs for nested model definitions
+    assert "$defs" in content, "Schema missing $defs for nested models"
+    assert "TopologyNode" in content["$defs"], "TopologyNode missing from $defs"
+
+    # Verify the reference in the main properties
+    nodes_prop = content["properties"]["nodes"]
+    assert "items" in nodes_prop
+    assert "$ref" in nodes_prop["items"]
+    assert nodes_prop["items"]["$ref"] == "#/$defs/TopologyNode"
+
+
+def test_export_verifies_regex_patterns(tmp_path: Path) -> None:
+    """
+    Test that regex patterns (e.g., for 'name' and 'version') are correctly
+    exported in the AgentManifest schema.
+    """
+    output_dir = tmp_path / "schemas"
+    export_json_schemas(output_dir)
+
+    agent_path = output_dir / "agent.schema.json"
+    content = json.loads(agent_path.read_text(encoding="utf-8"))
+
+    # Check name pattern
+    name_prop = content["properties"]["name"]
+    assert "pattern" in name_prop
+    assert name_prop["pattern"] == "^[a-z0-9-]+$"
+
+    # Check version pattern
+    version_prop = content["properties"]["version"]
+    assert "pattern" in version_prop
+    assert version_prop["pattern"] == "^\\d+\\.\\d+\\.\\d+$"
+
+
+def test_export_fails_if_output_is_file(tmp_path: Path) -> None:
+    """
+    Test failure when the output path is an existing file, preventing directory creation.
+    """
+    output_file = tmp_path / "is_a_file"
+    output_file.touch()
+
+    # Should raise NotADirectoryError or FileExistsError (OS dependent)
+    # mkdir(parents=True) raises FileExistsError if existing path is a file
+    with pytest.raises((FileExistsError, NotADirectoryError)):
+        export_json_schemas(output_file)
+
+
+def test_export_failure_in_model_generation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Test error handling when the model schema generation itself fails.
+    """
+    output_dir = tmp_path / "schemas"
+
+    # Mock AgentManifest.model_json_schema to raise an error
+    def mock_schema_gen(*args: Any, **kwargs: Any) -> Any:
+        raise ValueError("Simulated schema generation failure")
+
+    monkeypatch.setattr(AgentManifest, "model_json_schema", mock_schema_gen)
+
+    with pytest.raises(ValueError, match="Simulated schema generation failure"):
         export_json_schemas(output_dir)
