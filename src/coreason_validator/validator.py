@@ -180,3 +180,11 @@ def validate_file(
         # Convert TypedDict to dict for Mypy compatibility if needed, though usually compatible.
         # But Mypy complained, so we explicitly cast/copy.
         return ValidationResult(is_valid=False, errors=[dict(err) for err in e.errors()])
+    except RecursionError:
+        logger.error("Recursion error during validation")
+        return ValidationResult(
+            is_valid=False, errors=[{"msg": "Recursion limit exceeded (possible cyclic reference)"}]
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during validation: {e}")
+        return ValidationResult(is_valid=False, errors=[{"msg": f"Validation error: {str(e)}"}])
