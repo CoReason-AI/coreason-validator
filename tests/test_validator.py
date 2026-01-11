@@ -35,6 +35,17 @@ def test_sanitize_inputs_nested() -> None:
     assert sanitize_inputs(data) == expected
 
 
+def test_sanitize_inputs_tuple_set() -> None:
+    """Test sanitization of tuples and sets."""
+    data_tuple = ("  a  ", "b\0")
+    expected_tuple = ("a", "b")
+    assert sanitize_inputs(data_tuple) == expected_tuple
+
+    data_set = {"  x  ", "y\0"}
+    expected_set = {"x", "y"}
+    assert sanitize_inputs(data_set) == expected_set
+
+
 def test_validate_object_success() -> None:
     """Test successful validation of an AgentManifest."""
     data = {
