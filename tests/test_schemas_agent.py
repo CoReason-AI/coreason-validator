@@ -9,7 +9,7 @@ def test_valid_agent_manifest() -> None:
     manifest = AgentManifest(
         name="test-agent",
         version="1.0.0",
-        model_config="gpt-4",
+        model_config_id="gpt-4",
         max_cost_limit=10.0,
     )
     assert manifest.name == "test-agent"
@@ -25,7 +25,7 @@ def test_invalid_name_pattern() -> None:
         AgentManifest(
             name="TestAgent",  # Invalid: contains capitals
             version="1.0.0",
-            model_config="gpt-4",
+            model_config_id="gpt-4",
             max_cost_limit=10.0,
         )
     assert "string_pattern_mismatch" in str(exc.value)
@@ -37,7 +37,7 @@ def test_invalid_version_pattern() -> None:
         AgentManifest(
             name="test-agent",
             version="1.0",  # Invalid: missing patch version
-            model_config="gpt-4",
+            model_config_id="gpt-4",
             max_cost_limit=10.0,
         )
     assert "string_pattern_mismatch" in str(exc.value)
@@ -49,7 +49,7 @@ def test_invalid_cost_limit() -> None:
         AgentManifest(
             name="test-agent",
             version="1.0.0",
-            model_config="gpt-4",
+            model_config_id="gpt-4",
             max_cost_limit=0.0,  # Invalid: must be > 0
         )
     assert "greater_than" in str(exc.value)
@@ -61,9 +61,9 @@ def test_invalid_schema_version() -> None:
         AgentManifest(
             name="test-agent",
             version="1.0.0",
-            model_config="gpt-4",
+            model_config_id="gpt-4",
             max_cost_limit=10.0,
-            schema_version="0.9",  # type: ignore
+            schema_version="0.9",
         )
     assert "literal_error" in str(exc.value)
 
@@ -74,7 +74,7 @@ def test_extra_fields_forbidden() -> None:
         AgentManifest(
             name="test-agent",
             version="1.0.0",
-            model_config="gpt-4",
+            model_config_id="gpt-4",
             max_cost_limit=10.0,
             extra_field="should-fail",  # type: ignore
         )
@@ -86,11 +86,11 @@ def test_immutability() -> None:
     manifest = AgentManifest(
         name="test-agent",
         version="1.0.0",
-        model_config="gpt-4",
+        model_config_id="gpt-4",
         max_cost_limit=10.0,
     )
     with pytest.raises(ValidationError) as exc:
-        manifest.name = "new-name"
+        manifest.name = "new-name"  # type: ignore[misc]
     assert "frozen_instance" in str(exc.value)
 
 
@@ -99,7 +99,7 @@ def test_serialization_alias() -> None:
     manifest = AgentManifest(
         name="test-agent",
         version="1.0.0",
-        model_config="gpt-4",
+        model_config_id="gpt-4",
         max_cost_limit=10.0,
     )
     dumped = manifest.model_dump(by_alias=True)
@@ -114,25 +114,25 @@ def test_name_edge_cases() -> None:
     AgentManifest(
         name="a-b",
         version="1.0.0",
-        model_config="gpt-4",
+        model_config_id="gpt-4",
         max_cost_limit=1.0,
     )
     AgentManifest(
         name="1-2",
         version="1.0.0",
-        model_config="gpt-4",
+        model_config_id="gpt-4",
         max_cost_limit=1.0,
     )
 
     # Invalid edge cases
     with pytest.raises(ValidationError):
-        AgentManifest(name="a_b", version="1.0.0", model_config="gpt-4", max_cost_limit=1.0)
+        AgentManifest(name="a_b", version="1.0.0", model_config_id="gpt-4", max_cost_limit=1.0)
 
     with pytest.raises(ValidationError):
-        AgentManifest(name="", version="1.0.0", model_config="gpt-4", max_cost_limit=1.0)
+        AgentManifest(name="", version="1.0.0", model_config_id="gpt-4", max_cost_limit=1.0)
 
     with pytest.raises(ValidationError):
-        AgentManifest(name="A-b", version="1.0.0", model_config="gpt-4", max_cost_limit=1.0)
+        AgentManifest(name="A-b", version="1.0.0", model_config_id="gpt-4", max_cost_limit=1.0)
 
 
 def test_version_edge_cases() -> None:
@@ -141,19 +141,19 @@ def test_version_edge_cases() -> None:
     AgentManifest(
         name="test",
         version="0.0.0",
-        model_config="gpt-4",
+        model_config_id="gpt-4",
         max_cost_limit=1.0,
     )
 
     # Invalid
     with pytest.raises(ValidationError):
-        AgentManifest(name="test", version="1.0", model_config="gpt-4", max_cost_limit=1.0)
+        AgentManifest(name="test", version="1.0", model_config_id="gpt-4", max_cost_limit=1.0)
 
     with pytest.raises(ValidationError):
-        AgentManifest(name="test", version="1.0.0.", model_config="gpt-4", max_cost_limit=1.0)
+        AgentManifest(name="test", version="1.0.0.", model_config_id="gpt-4", max_cost_limit=1.0)
 
     with pytest.raises(ValidationError):
-        AgentManifest(name="test", version="v1.0.0", model_config="gpt-4", max_cost_limit=1.0)
+        AgentManifest(name="test", version="v1.0.0", model_config_id="gpt-4", max_cost_limit=1.0)
 
 
 def test_cost_edge_cases() -> None:
@@ -164,7 +164,7 @@ def test_cost_edge_cases() -> None:
     manifest = AgentManifest(
         name="test",
         version="1.0.0",
-        model_config="gpt-4",
+        model_config_id="gpt-4",
         max_cost_limit=float("inf"),
     )
     assert manifest.max_cost_limit == float("inf")
@@ -175,6 +175,6 @@ def test_cost_edge_cases() -> None:
         AgentManifest(
             name="test",
             version="1.0.0",
-            model_config="gpt-4",
+            model_config_id="gpt-4",
             max_cost_limit=float("nan"),
         )

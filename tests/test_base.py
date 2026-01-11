@@ -92,7 +92,7 @@ def test_agent_manifest_inheritance() -> None:
     manifest = AgentManifest(
         name="test-agent",
         version="1.0.0",
-        model_config="gpt-4",
+        model_config_id="gpt-4",
         max_cost_limit=10.0,
     )
     h = manifest.canonical_hash()
