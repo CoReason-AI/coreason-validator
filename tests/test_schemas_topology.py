@@ -124,3 +124,86 @@ def test_topology_canonical_hash() -> None:
     hash_val = graph.canonical_hash()
     assert isinstance(hash_val, str)
     assert len(hash_val) == 64  # SHA-256 hex digest length
+
+
+def test_topology_valid_diamond() -> None:
+    """
+    Test a diamond pattern:
+      /-> B -\
+    A         -> D
+      \\-> C -/
+    This checks that visiting D via B doesn't mark it as 'visiting' (cycle)
+    when we later try to reach it via C. It should be 'visited'.
+    """
+    nodes = [
+        TopologyNode(id="A", step_type="start", next_steps=["B", "C"]),
+        TopologyNode(id="B", step_type="process", next_steps=["D"]),
+        TopologyNode(id="C", step_type="process", next_steps=["D"]),
+        TopologyNode(id="D", step_type="end", next_steps=[]),
+    ]
+    graph = TopologyGraph(nodes=nodes)
+    assert len(graph.nodes) == 4
+
+
+def test_topology_valid_disconnected() -> None:
+    """
+    Test multiple disconnected valid components.
+    A -> B
+    C -> D
+    """
+    nodes = [
+        TopologyNode(id="A", step_type="start", next_steps=["B"]),
+        TopologyNode(id="B", step_type="end", next_steps=[]),
+        TopologyNode(id="C", step_type="start", next_steps=["D"]),
+        TopologyNode(id="D", step_type="end", next_steps=[]),
+    ]
+    graph = TopologyGraph(nodes=nodes)
+    assert len(graph.nodes) == 4
+
+
+def test_topology_redundant_edges() -> None:
+    """
+    Test that duplicate edges (A points to B twice) are handled gracefully
+    and don't cause cycles or errors.
+    """
+    nodes = [
+        TopologyNode(id="A", step_type="start", next_steps=["B", "B"]),
+        TopologyNode(id="B", step_type="end", next_steps=[]),
+    ]
+    graph = TopologyGraph(nodes=nodes)
+    assert len(graph.nodes) == 2
+
+
+def test_topology_complex_config() -> None:
+    """
+    Test that the 'config' field handles complex nested dictionaries.
+    """
+    config_data = {
+        "model": "gpt-4",
+        "params": {"temperature": 0.7, "stops": ["\n"]},
+        "retry": True,
+    }
+    nodes = [
+        TopologyNode(id="A", step_type="llm", config=config_data),
+    ]
+    graph = TopologyGraph(nodes=nodes)
+    assert graph.nodes[0].config == config_data
+
+    # Ensure hashing works with nested dicts
+    hash_val = graph.canonical_hash()
+    assert isinstance(hash_val, str)
+
+
+def test_topology_large_chain() -> None:
+    """
+    Test a long chain of nodes to verify recursion/performance.
+    0 -> 1 -> 2 -> ... -> 99
+    """
+    chain_length = 100
+    nodes = []
+    for i in range(chain_length):
+        next_steps = [str(i + 1)] if i < chain_length - 1 else []
+        nodes.append(TopologyNode(id=str(i), step_type="step", next_steps=next_steps))
+
+    graph = TopologyGraph(nodes=nodes)
+    assert len(graph.nodes) == chain_length
