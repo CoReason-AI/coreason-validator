@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from coreason_validator.schemas.agent import AgentManifest
 from coreason_validator.schemas.base import CoReasonBaseModel
 from coreason_validator.schemas.bec import BECManifest
+from coreason_validator.schemas.message import Message
 from coreason_validator.schemas.tool import ToolCall
 from coreason_validator.schemas.topology import TopologyGraph
 from coreason_validator.utils.logger import logger
@@ -88,6 +89,7 @@ def validate_object(data: Dict[str, Any], schema_type: Union[Type[T], str]) -> T
             "topology": TopologyGraph,
             "bec": BECManifest,
             "tool": ToolCall,
+            "message": Message,
         }
         found_class = lookup.get(schema_type.lower())
         if not found_class:
@@ -127,6 +129,23 @@ def validate_tool_call(tool_call_data: Dict[str, Any]) -> ToolCall:
         ValidationError: If validation fails.
     """
     return validate_object(tool_call_data, ToolCall)
+
+
+def validate_message(message_data: Dict[str, Any]) -> Message:
+    """
+    Validates an inter-agent message payload.
+    A wrapper around validate_object specifically for Message.
+
+    Args:
+        message_data: The dictionary containing message fields.
+
+    Returns:
+        Validated Message object.
+
+    Raises:
+        ValidationError: If validation fails.
+    """
+    return validate_object(message_data, Message)
 
 
 def check_compliance(instance: Dict[str, Any], schema: Dict[str, Any]) -> None:

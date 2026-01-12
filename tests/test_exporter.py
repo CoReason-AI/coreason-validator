@@ -5,15 +5,15 @@ from typing import Any
 import pytest
 
 from coreason_validator.schemas.agent import AgentManifest
-from coreason_validator.utils.exporter import export_json_schemas
+from coreason_validator.utils.exporter import export_json_schema
 
 
-def test_export_json_schemas_creates_files(tmp_path: Path) -> None:
+def test_export_json_schema_creates_files(tmp_path: Path) -> None:
     """
     Test that the exporter creates the expected files in the output directory.
     """
     output_dir = tmp_path / "schemas"
-    export_json_schemas(output_dir)
+    export_json_schema(output_dir)
 
     expected_files = [
         "agent.schema.json",
@@ -28,12 +28,12 @@ def test_export_json_schemas_creates_files(tmp_path: Path) -> None:
         assert file_path.is_file()
 
 
-def test_export_json_schemas_content_is_valid(tmp_path: Path) -> None:
+def test_export_json_schema_content_is_valid(tmp_path: Path) -> None:
     """
     Test that the generated files contain valid JSON and look like schemas.
     """
     output_dir = tmp_path / "schemas"
-    export_json_schemas(output_dir)
+    export_json_schema(output_dir)
 
     # Check agent.schema.json as a sample
     agent_schema_path = output_dir / "agent.schema.json"
@@ -48,7 +48,7 @@ def test_export_json_schemas_content_is_valid(tmp_path: Path) -> None:
     assert "model_config" in content["properties"]
 
 
-def test_export_json_schemas_overwrites_existing(tmp_path: Path) -> None:
+def test_export_json_schema_overwrites_existing(tmp_path: Path) -> None:
     """
     Test that the exporter overwrites existing files.
     """
@@ -58,13 +58,13 @@ def test_export_json_schemas_overwrites_existing(tmp_path: Path) -> None:
     agent_schema_path = output_dir / "agent.schema.json"
     agent_schema_path.write_text("old content", encoding="utf-8")
 
-    export_json_schemas(output_dir)
+    export_json_schema(output_dir)
 
     content = json.loads(agent_schema_path.read_text(encoding="utf-8"))
     assert content["title"] == "AgentManifest"
 
 
-def test_export_json_schemas_handles_write_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_export_json_schema_handles_write_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """
     Test handling of write errors during export.
     """
@@ -79,7 +79,7 @@ def test_export_json_schemas_handles_write_error(tmp_path: Path, monkeypatch: py
     monkeypatch.setattr("builtins.open", mock_open)
 
     with pytest.raises(PermissionError):
-        export_json_schemas(output_dir)
+        export_json_schema(output_dir)
 
 
 def test_export_verifies_nested_definitions(tmp_path: Path) -> None:
@@ -88,7 +88,7 @@ def test_export_verifies_nested_definitions(tmp_path: Path) -> None:
     and references for TopologyNode, confirming complex structure support.
     """
     output_dir = tmp_path / "schemas"
-    export_json_schemas(output_dir)
+    export_json_schema(output_dir)
 
     topology_path = output_dir / "topology.schema.json"
     content = json.loads(topology_path.read_text(encoding="utf-8"))
@@ -110,7 +110,7 @@ def test_export_verifies_regex_patterns(tmp_path: Path) -> None:
     exported in the AgentManifest schema.
     """
     output_dir = tmp_path / "schemas"
-    export_json_schemas(output_dir)
+    export_json_schema(output_dir)
 
     agent_path = output_dir / "agent.schema.json"
     content = json.loads(agent_path.read_text(encoding="utf-8"))
@@ -136,7 +136,7 @@ def test_export_fails_if_output_is_file(tmp_path: Path) -> None:
     # Should raise NotADirectoryError or FileExistsError (OS dependent)
     # mkdir(parents=True) raises FileExistsError if existing path is a file
     with pytest.raises((FileExistsError, NotADirectoryError)):
-        export_json_schemas(output_file)
+        export_json_schema(output_file)
 
 
 def test_export_failure_in_model_generation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -152,4 +152,4 @@ def test_export_failure_in_model_generation(tmp_path: Path, monkeypatch: pytest.
     monkeypatch.setattr(AgentManifest, "model_json_schema", mock_schema_gen)
 
     with pytest.raises(ValueError, match="Simulated schema generation failure"):
-        export_json_schemas(output_dir)
+        export_json_schema(output_dir)

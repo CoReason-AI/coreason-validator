@@ -12,10 +12,24 @@
 Enforces structural integrity across the entire CoReason ecosystem
 """
 
-from .validator import check_compliance, sanitize_inputs, validate_file, validate_object, validate_tool_call
+from .validator import (
+    check_compliance,
+    sanitize_inputs,
+    validate_file,
+    validate_message,
+    validate_object,
+    validate_tool_call,
+)
 
 __version__ = "0.1.0"
 __author__ = "Gowtham A Rao"
 __email__ = "gowtham.rao@coreason.ai"
 
-__all__ = ["check_compliance", "sanitize_inputs", "validate_file", "validate_object", "validate_tool_call"]
+__all__ = [
+    "check_compliance",
+    "sanitize_inputs",
+    "validate_file",
+    "validate_message",
+    "validate_object",
+    "validate_tool_call",
+]

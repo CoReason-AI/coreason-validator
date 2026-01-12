@@ -2,7 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from coreason_validator.utils.exporter import export_json_schemas
+from coreason_validator.utils.exporter import export_json_schema
 from coreason_validator.validator import validate_file
 
 
@@ -38,7 +38,7 @@ def handle_export(args: argparse.Namespace) -> int:
     """
     output_dir = Path(args.dir)
     try:
-        export_json_schemas(output_dir)
+        export_json_schema(output_dir)
         print(f"✅ Schemas exported to: {output_dir}")
         return 0
     except Exception as e:
