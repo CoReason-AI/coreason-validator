@@ -36,7 +36,10 @@ class ValidationResult(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     is_valid: bool
-    model: Optional[CoReasonBaseModel] = None
+    # Use Any for model to avoid Pydantic truncating fields when serializing polymorphic models
+    # if the base class has no fields. Or use Union of all known models.
+    # Using Any is safest for now to ensure model_dump_json works.
+    model: Optional[Any] = None
     errors: List[Dict[str, Any]] = Field(default_factory=list)
 
 
