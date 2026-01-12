@@ -17,7 +17,7 @@ def mock_validator() -> Generator[MagicMock, None, None]:
 
 @pytest.fixture
 def mock_exporter() -> Generator[MagicMock, None, None]:
-    with patch("coreason_validator.cli.export_json_schemas") as mock:
+    with patch("coreason_validator.cli.export_json_schema") as mock:
         yield mock
 
 
