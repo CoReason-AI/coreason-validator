@@ -108,8 +108,9 @@ def test_validate_agent_alias() -> None:
         "schema_version": "1.0",
         "name": "my-agent",
         "version": "1.0.0",
-        "model_config": "gpt-4",
+        "model_config": "gpt-4-turbo",
         "max_cost_limit": 5.0,
+        "topology": "t.json",
     }
     agent: AgentManifest = validate_object(data, "agent")
     assert isinstance(agent, AgentManifest)

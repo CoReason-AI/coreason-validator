@@ -66,6 +66,7 @@ def test_ambiguous_inference(temp_dir: Path) -> None:
         "name": "agent",
         "version": "1.0.0",
         "max_cost_limit": 1.0,
+        "topology": "t.json",
         # minimal fields for BECManifest
         "cases": [],
     }

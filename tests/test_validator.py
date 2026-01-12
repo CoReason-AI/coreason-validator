@@ -52,13 +52,15 @@ def test_validate_object_success() -> None:
         "schema_version": "1.0",
         "name": "my-agent",
         "version": "1.0.0",
-        "model_config": "gpt-4",
+        "model_config": "gpt-4-turbo",
         "max_cost_limit": 10.0,
+        "topology": "path/to/topo.json",
     }
     agent = validate_object(data, AgentManifest)
     assert isinstance(agent, AgentManifest)
     assert agent.name == "my-agent"
     assert agent.max_cost_limit == 10.0
+    assert agent.topology == "path/to/topo.json"
 
 
 def test_validate_object_sanitization_integration() -> None:

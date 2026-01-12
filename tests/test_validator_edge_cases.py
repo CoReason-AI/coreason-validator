@@ -74,8 +74,9 @@ def test_validate_object_extra_fields_forbidden() -> None:
         "schema_version": "1.0",
         "name": "my-agent",
         "version": "1.0.0",
-        "model_config": "gpt-4",
+        "model_config": "gpt-4-turbo",
         "max_cost_limit": 10.0,
+        "topology": "t.json",
         "extra_field": "should_fail",
     }
     with pytest.raises(ValidationError) as excinfo:
