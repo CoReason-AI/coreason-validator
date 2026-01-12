@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -13,10 +14,18 @@ def handle_check(args: argparse.Namespace) -> int:
     """
     path = Path(args.path)
     if not path.exists():
-        print(f"Error: File not found: {path}")
+        if args.json:
+            print(json.dumps({"is_valid": False, "errors": [{"msg": f"File not found: {path}"}]}))
+        else:
+            print(f"Error: File not found: {path}")
         return 1
 
     result = validate_file(path)
+
+    if args.json:
+        # Dump the result model to JSON.
+        print(result.model_dump_json())
+        return 0 if result.is_valid else 1
 
     if result.is_valid:
         print(f"✅ Validation successful: {path}")
@@ -56,6 +65,7 @@ def main() -> None:
     # Subcommand: check
     parser_check = subparsers.add_parser("check", help="Validate a file against its schema.")
     parser_check.add_argument("path", help="Path to the file to validate.")
+    parser_check.add_argument("--json", action="store_true", help="Output result as JSON.")
     parser_check.set_defaults(func=handle_check)
 
     # Subcommand: export

@@ -1,5 +1,4 @@
 import pytest
-
 from coreason_validator.validator import check_compliance
 
 
