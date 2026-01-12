@@ -137,6 +137,7 @@ def test_validate_file_validation_error(temp_dir: Path) -> None:
     # Check structure of error
     err = result.errors[0]
     assert "msg" in err
+    assert "loc" in err
 
 
 def test_validate_file_parse_error(temp_dir: Path) -> None:
@@ -243,4 +244,7 @@ def test_validate_file_unknown_alias(temp_dir: Path) -> None:
 
     result = validate_file(file_path, schema_type="unknown_alias")
     assert not result.is_valid
+    # The error message from validate_object bubbles up as ValueError, but validate_file catches it?
+    # Actually validate_file has:
+    # except ValueError as e: return ValidationResult(..., errors=[{"msg": str(e)}])
     assert "Unknown schema type alias" in str(result.errors)

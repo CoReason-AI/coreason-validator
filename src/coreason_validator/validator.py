@@ -60,35 +60,73 @@ def sanitize_inputs(data: Any) -> Any:
     return data
 
 
-def validate_object(data: Dict[str, Any], schema: Type[T]) -> T:
+def validate_object(data: Dict[str, Any], schema_type: Union[Type[T], str]) -> T:
     """
-    Validates a dictionary against a Pydantic schema class.
+    Validates a dictionary against a Pydantic schema class or a string alias.
 
     1. Sanitizes inputs (trims whitespace, strips null bytes).
-    2. Validates against the provided schema.
-    3. Returns the validated model instance or raises ValidationError.
+    2. Resolves schema if string alias is provided.
+    3. Validates against the provided schema.
+    4. Returns the validated model instance or raises ValidationError.
 
     Args:
         data: The input dictionary.
-        schema: The Pydantic model class (must inherit from CoReasonBaseModel).
+        schema_type: The Pydantic model class (must inherit from CoReasonBaseModel) or a string alias.
 
     Returns:
         An instance of the schema class.
 
     Raises:
         ValidationError: If validation fails.
+        ValueError: If schema_type is invalid.
     """
-    logger.debug(f"Validating object against schema {schema.__name__}")
+    schema_class: Type[T]
+
+    if isinstance(schema_type, str):
+        lookup: Dict[str, Type[CoReasonBaseModel]] = {
+            "agent": AgentManifest,
+            "topology": TopologyGraph,
+            "bec": BECManifest,
+            "tool": ToolCall,
+        }
+        found_class = lookup.get(schema_type.lower())
+        if not found_class:
+            raise ValueError(f"Unknown schema type alias: '{schema_type}'")
+        # We need to cast because T is bound to CoReasonBaseModel but mypy needs help
+        schema_class = found_class  # type: ignore
+    elif isinstance(schema_type, type) and issubclass(schema_type, CoReasonBaseModel):
+        schema_class = schema_type
+    else:
+        raise ValueError("Invalid schema_type argument. Must be a CoReasonBaseModel subclass or a string alias.")
+
+    logger.debug(f"Validating object against schema {schema_class.__name__}")
 
     clean_data = sanitize_inputs(data)
 
     try:
-        instance = schema.model_validate(clean_data)
-        logger.debug(f"Validation successful for {schema.__name__}")
+        instance = schema_class.model_validate(clean_data)
+        logger.debug(f"Validation successful for {schema_class.__name__}")
         return instance
     except ValidationError as e:
-        logger.error(f"Validation failed for {schema.__name__}: {e}")
+        logger.error(f"Validation failed for {schema_class.__name__}: {e}")
         raise
+
+
+def validate_tool_call(tool_call_data: Dict[str, Any]) -> ToolCall:
+    """
+    Validates a tool call payload.
+    A wrapper around validate_object specifically for ToolCall.
+
+    Args:
+        tool_call_data: The dictionary containing tool name and arguments.
+
+    Returns:
+        Validated ToolCall object.
+
+    Raises:
+        ValidationError: If validation fails.
+    """
+    return validate_object(tool_call_data, ToolCall)
 
 
 def check_compliance(instance: Dict[str, Any], schema: Dict[str, Any]) -> None:
@@ -178,19 +216,7 @@ def validate_file(
     # 2. Resolve Schema
     schema_class: Optional[Type[CoReasonBaseModel]] = None
 
-    if isinstance(schema_type, type) and issubclass(schema_type, CoReasonBaseModel):
-        schema_class = schema_type
-    elif isinstance(schema_type, str):
-        lookup: Dict[str, Type[CoReasonBaseModel]] = {
-            "agent": AgentManifest,
-            "topology": TopologyGraph,
-            "bec": BECManifest,
-            "tool": ToolCall,
-        }
-        schema_class = lookup.get(schema_type.lower())
-        if not schema_class:
-            return ValidationResult(is_valid=False, errors=[{"msg": f"Unknown schema type alias: '{schema_type}'"}])
-    elif schema_type is None:
+    if schema_type is None:
         # Inference Logic
         if "model_config" in content:
             schema_class = AgentManifest
@@ -202,18 +228,29 @@ def validate_file(
             schema_class = ToolCall
         else:
             return ValidationResult(is_valid=False, errors=[{"msg": "Could not infer schema type from content."}])
+    elif isinstance(schema_type, (str, type)):
+        # Delegate resolution to validate_object's logic, but we need the class for ValidationResult if possible
+        # Actually validate_object returns the instance, so we are good.
+        pass
     else:
         return ValidationResult(is_valid=False, errors=[{"msg": "Invalid schema_type argument."}])
 
     # 3. Validate
     try:
-        instance = validate_object(content, schema_class)
+        # If schema_type was None, we inferred schema_class.
+        # If schema_type was provided, we pass it directly to validate_object.
+        target_schema = schema_class if schema_class else schema_type
+        # We need to ensure target_schema is not None.
+
+        instance = validate_object(content, target_schema)  # type: ignore
         return ValidationResult(is_valid=True, model=instance)
     except ValidationError as e:
         # Returns the list of error dicts provided by Pydantic
-        # Convert TypedDict to dict for Mypy compatibility if needed, though usually compatible.
-        # But Mypy complained, so we explicitly cast/copy.
+        # Must catch ValidationError BEFORE ValueError because ValidationError inherits from ValueError in Pydantic V2
         return ValidationResult(is_valid=False, errors=[dict(err) for err in e.errors()])
+    except ValueError as e:
+        # validate_object raises ValueError for invalid alias
+        return ValidationResult(is_valid=False, errors=[{"msg": str(e)}])
     except RecursionError:
         logger.error("Recursion error during validation")
         return ValidationResult(
