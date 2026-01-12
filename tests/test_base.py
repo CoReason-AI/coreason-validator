@@ -92,8 +92,9 @@ def test_agent_manifest_inheritance() -> None:
     manifest = AgentManifest(
         name="test-agent",
         version="1.0.0",
-        model_config_id="gpt-4",
+        model_config_id="gpt-4-turbo",
         max_cost_limit=10.0,
+        topology="topology.json",
     )
     h = manifest.canonical_hash()
     assert isinstance(h, str)

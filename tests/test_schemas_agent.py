@@ -9,14 +9,16 @@ def test_valid_agent_manifest() -> None:
     manifest = AgentManifest(
         name="test-agent",
         version="1.0.0",
-        model_config_id="gpt-4",
+        model_config_id="gpt-4-turbo",
         max_cost_limit=10.0,
+        topology="path/to/topology.json",
     )
     assert manifest.name == "test-agent"
     assert manifest.version == "1.0.0"
-    assert manifest.model_config_id == "gpt-4"
+    assert manifest.model_config_id == "gpt-4-turbo"
     assert manifest.max_cost_limit == 10.0
     assert manifest.schema_version == "1.0"
+    assert manifest.topology == "path/to/topology.json"
 
 
 def test_invalid_name_pattern() -> None:
@@ -25,8 +27,9 @@ def test_invalid_name_pattern() -> None:
         AgentManifest(
             name="TestAgent",  # Invalid: contains capitals
             version="1.0.0",
-            model_config_id="gpt-4",
+            model_config_id="gpt-4-turbo",
             max_cost_limit=10.0,
+            topology="topo.json",
         )
     assert "string_pattern_mismatch" in str(exc.value)
 
@@ -37,8 +40,9 @@ def test_invalid_version_pattern() -> None:
         AgentManifest(
             name="test-agent",
             version="1.0",  # Invalid: missing patch version
-            model_config_id="gpt-4",
+            model_config_id="gpt-4-turbo",
             max_cost_limit=10.0,
+            topology="topo.json",
         )
     assert "string_pattern_mismatch" in str(exc.value)
 
@@ -49,10 +53,39 @@ def test_invalid_cost_limit() -> None:
         AgentManifest(
             name="test-agent",
             version="1.0.0",
-            model_config_id="gpt-4",
+            model_config_id="gpt-4-turbo",
             max_cost_limit=0.0,  # Invalid: must be > 0
+            topology="topo.json",
         )
     assert "greater_than" in str(exc.value)
+
+
+def test_invalid_model_config() -> None:
+    """Test that model_config must be one of the allowed literals."""
+    with pytest.raises(ValidationError) as exc:
+        AgentManifest(
+            name="test-agent",
+            version="1.0.0",
+            model_config_id="gpt-3.5-turbo",  # Invalid: not in allowed list
+            max_cost_limit=10.0,
+            topology="topo.json",
+        )
+    assert "literal_error" in str(exc.value)
+    # Check that valid options are mentioned in error message (optional, depends on Pydantic version)
+
+
+def test_missing_topology() -> None:
+    """Test that topology field is required."""
+    with pytest.raises(ValidationError) as exc:
+        AgentManifest(  # type: ignore[call-arg]
+            name="test-agent",
+            version="1.0.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=10.0,
+            # Missing topology
+        )
+    assert "topology" in str(exc.value)
+    assert "Field required" in str(exc.value)
 
 
 def test_invalid_schema_version() -> None:
@@ -61,8 +94,9 @@ def test_invalid_schema_version() -> None:
         AgentManifest(
             name="test-agent",
             version="1.0.0",
-            model_config_id="gpt-4",
+            model_config_id="gpt-4-turbo",
             max_cost_limit=10.0,
+            topology="topo.json",
             schema_version="0.9",
         )
     assert "literal_error" in str(exc.value)
@@ -74,8 +108,9 @@ def test_extra_fields_forbidden() -> None:
         AgentManifest(
             name="test-agent",
             version="1.0.0",
-            model_config_id="gpt-4",
+            model_config_id="gpt-4-turbo",
             max_cost_limit=10.0,
+            topology="topo.json",
             extra_field="should-fail",  # type: ignore
         )
     assert "extra_forbidden" in str(exc.value)
@@ -86,8 +121,9 @@ def test_immutability() -> None:
     manifest = AgentManifest(
         name="test-agent",
         version="1.0.0",
-        model_config_id="gpt-4",
+        model_config_id="gpt-4-turbo",
         max_cost_limit=10.0,
+        topology="topo.json",
     )
     with pytest.raises(ValidationError) as exc:
         manifest.name = "new-name"  # type: ignore[misc]
@@ -99,13 +135,14 @@ def test_serialization_alias() -> None:
     manifest = AgentManifest(
         name="test-agent",
         version="1.0.0",
-        model_config_id="gpt-4",
+        model_config_id="gpt-4-turbo",
         max_cost_limit=10.0,
+        topology="topo.json",
     )
     dumped = manifest.model_dump(by_alias=True)
     assert "model_config" in dumped
     assert "model_config_id" not in dumped
-    assert dumped["model_config"] == "gpt-4"
+    assert dumped["model_config"] == "gpt-4-turbo"
 
 
 def test_name_edge_cases() -> None:
@@ -114,25 +151,45 @@ def test_name_edge_cases() -> None:
     AgentManifest(
         name="a-b",
         version="1.0.0",
-        model_config_id="gpt-4",
+        model_config_id="gpt-4-turbo",
         max_cost_limit=1.0,
+        topology="t.json",
     )
     AgentManifest(
         name="1-2",
         version="1.0.0",
-        model_config_id="gpt-4",
+        model_config_id="gpt-4-turbo",
         max_cost_limit=1.0,
+        topology="t.json",
     )
 
     # Invalid edge cases
     with pytest.raises(ValidationError):
-        AgentManifest(name="a_b", version="1.0.0", model_config_id="gpt-4", max_cost_limit=1.0)
+        AgentManifest(
+            name="a_b",
+            version="1.0.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t.json",
+        )
 
     with pytest.raises(ValidationError):
-        AgentManifest(name="", version="1.0.0", model_config_id="gpt-4", max_cost_limit=1.0)
+        AgentManifest(
+            name="",
+            version="1.0.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t.json",
+        )
 
     with pytest.raises(ValidationError):
-        AgentManifest(name="A-b", version="1.0.0", model_config_id="gpt-4", max_cost_limit=1.0)
+        AgentManifest(
+            name="A-b",
+            version="1.0.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t.json",
+        )
 
 
 def test_version_edge_cases() -> None:
@@ -141,19 +198,38 @@ def test_version_edge_cases() -> None:
     AgentManifest(
         name="test",
         version="0.0.0",
-        model_config_id="gpt-4",
+        model_config_id="gpt-4-turbo",
         max_cost_limit=1.0,
+        topology="t.json",
     )
 
     # Invalid
     with pytest.raises(ValidationError):
-        AgentManifest(name="test", version="1.0", model_config_id="gpt-4", max_cost_limit=1.0)
+        AgentManifest(
+            name="test",
+            version="1.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t.json",
+        )
 
     with pytest.raises(ValidationError):
-        AgentManifest(name="test", version="1.0.0.", model_config_id="gpt-4", max_cost_limit=1.0)
+        AgentManifest(
+            name="test",
+            version="1.0.0.",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t.json",
+        )
 
     with pytest.raises(ValidationError):
-        AgentManifest(name="test", version="v1.0.0", model_config_id="gpt-4", max_cost_limit=1.0)
+        AgentManifest(
+            name="test",
+            version="v1.0.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t.json",
+        )
 
 
 def test_cost_edge_cases() -> None:
@@ -164,8 +240,9 @@ def test_cost_edge_cases() -> None:
     manifest = AgentManifest(
         name="test",
         version="1.0.0",
-        model_config_id="gpt-4",
+        model_config_id="gpt-4-turbo",
         max_cost_limit=float("inf"),
+        topology="t.json",
     )
     assert manifest.max_cost_limit == float("inf")
 
@@ -175,6 +252,7 @@ def test_cost_edge_cases() -> None:
         AgentManifest(
             name="test",
             version="1.0.0",
-            model_config_id="gpt-4",
+            model_config_id="gpt-4-turbo",
             max_cost_limit=float("nan"),
+            topology="t.json",
         )
