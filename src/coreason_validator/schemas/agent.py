@@ -36,4 +36,4 @@ class AgentManifest(CoReasonBaseModel):
         description="Must match allowlist in Manifest",
     )
     max_cost_limit: float = Field(gt=0.0, description="Maximum cost limit in dollars")
-    topology: str = Field(..., description="Path to the topology definition file")
+    topology: str = Field(..., min_length=1, description="Path to the topology definition file")
