@@ -12,7 +12,9 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
+import jsonschema
 import yaml
+from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from coreason_validator.schemas.agent import AgentManifest
@@ -87,6 +89,38 @@ def validate_object(data: Dict[str, Any], schema: Type[T]) -> T:
     except ValidationError as e:
         logger.error(f"Validation failed for {schema.__name__}: {e}")
         raise
+
+
+def check_compliance(instance: Dict[str, Any], schema: Dict[str, Any]) -> None:
+    """
+    Validates a JSON object against a JSON schema.
+    Used by Assay to check if an Agent's output complies with the BEC expected structure.
+
+    Args:
+        instance: The actual output from the agent (Dict).
+        schema: The JSON Schema defining expected structure (Dict).
+
+    Raises:
+        ValueError: If the instance does not comply with the schema.
+    """
+    logger.debug("Checking compliance against JSON Schema")
+
+    # Sanitize input first
+    clean_instance = sanitize_inputs(instance)
+
+    try:
+        jsonschema.validate(instance=clean_instance, schema=schema)
+        logger.debug("Compliance check passed")
+    except JsonSchemaValidationError as e:
+        # e.message contains the specific validation error
+        # e.json_path/path/schema_path help locate it
+        path_str = " -> ".join(str(p) for p in e.path) if e.path else "Root"
+        error_msg = f"Compliance check failed at [{path_str}]: {e.message}"
+        logger.error(error_msg)
+        raise ValueError(error_msg) from e
+    except Exception as e:
+        logger.error(f"Unexpected error during compliance check: {e}")
+        raise ValueError(f"Compliance check failed: {str(e)}") from e
 
 
 def validate_file(
