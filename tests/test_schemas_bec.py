@@ -1,8 +1,9 @@
 from unittest.mock import patch
 
 import pytest
-from coreason_validator.schemas.bec import BECManifest, TestCase
 from pydantic import ValidationError
+
+from coreason_validator.schemas.bec import BECManifest, TestCase
 
 
 def test_bec_manifest_valid() -> None:

@@ -9,11 +9,12 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
+from pydantic import ValidationError
+
 from coreason_validator.schemas.agent import AgentManifest
 from coreason_validator.schemas.tool import ToolCall
 from coreason_validator.schemas.topology import TopologyGraph
 from coreason_validator.validator import sanitize_inputs, validate_object
-from pydantic import ValidationError
 
 
 def test_sanitize_inputs_tuples_sets() -> None:

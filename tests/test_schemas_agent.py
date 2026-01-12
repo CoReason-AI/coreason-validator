@@ -1,6 +1,7 @@
 import pytest
-from coreason_validator.schemas.agent import AgentManifest
 from pydantic import ValidationError
+
+from coreason_validator.schemas.agent import AgentManifest
 
 
 def test_valid_agent_manifest() -> None:

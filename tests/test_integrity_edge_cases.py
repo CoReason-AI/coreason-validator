@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from coreason_validator.schemas.base import CoReasonBaseModel
 from pydantic import ConfigDict
+
+from coreason_validator.schemas.base import CoReasonBaseModel
 
 
 class EdgeCaseModel(CoReasonBaseModel):
