@@ -21,7 +21,7 @@ from coreason_validator.schemas.topology import TopologyGraph
 from coreason_validator.utils.logger import logger
 
 
-def export_json_schemas(output_dir: Path) -> None:
+def export_json_schema(output_dir: Path) -> None:
     """
     Exports JSON schemas for all core models to the specified directory.
 
