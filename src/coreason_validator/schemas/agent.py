@@ -30,10 +30,10 @@ class AgentManifest(CoReasonBaseModel):
     version: constr(pattern=r"^\d+\.\d+\.\d+$") = Field(  # type: ignore
         ..., description="SemVer strict version"
     )
-    model_config_id: str = Field(
+    model_config_id: Literal["gpt-4-turbo", "claude-3-opus"] = Field(
         ...,
         alias="model_config",
         description="Must match allowlist in Manifest",
-        min_length=1,
     )
     max_cost_limit: float = Field(gt=0.0, description="Maximum cost limit in dollars")
+    topology: str = Field(..., min_length=1, description="Path to the topology definition file")
