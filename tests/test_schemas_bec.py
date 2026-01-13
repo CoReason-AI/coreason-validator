@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from coreason_validator.schemas.bec import BECManifest, TestCase
+from coreason_validator.schemas.bec import BECManifest, BECTestCase
 
 
 def test_bec_manifest_valid() -> None:
@@ -17,7 +17,7 @@ def test_bec_manifest_valid() -> None:
     }
 
     cases = [
-        TestCase(
+        BECTestCase(
             id="test-1",
             prompt="Summarize this.",
             context_files=["data.txt"],
@@ -43,7 +43,7 @@ def test_bec_manifest_invalid_json_schema() -> None:
     }
 
     with pytest.raises(ValidationError) as excinfo:
-        TestCase(
+        BECTestCase(
             id="test-2",
             prompt="Fail me.",
             expected_output_structure=invalid_schema,
@@ -56,7 +56,7 @@ def test_bec_manifest_optional_structure() -> None:
     """
     Test that expected_output_structure is optional.
     """
-    case = TestCase(
+    case = BECTestCase(
         id="test-3",
         prompt="No schema needed.",
     )
@@ -71,7 +71,7 @@ def test_bec_manifest_hashing() -> None:
     Test canonical hashing for BECManifest.
     """
     schema = {"type": "string"}
-    case1 = TestCase(id="t1", prompt="p1", expected_output_structure=schema)
+    case1 = BECTestCase(id="t1", prompt="p1", expected_output_structure=schema)
     manifest1 = BECManifest(corpus_id="c1", cases=[case1])
 
     # Whitespace difference in schema shouldn't affect validation but might affect hash
@@ -81,7 +81,7 @@ def test_bec_manifest_hashing() -> None:
     # Let's verify deterministic hash
     hash1 = manifest1.canonical_hash()
 
-    case2 = TestCase(id="t1", prompt="p1", expected_output_structure=schema)
+    case2 = BECTestCase(id="t1", prompt="p1", expected_output_structure=schema)
     manifest2 = BECManifest(corpus_id="c1", cases=[case2])
 
     assert hash1 == manifest2.canonical_hash()
@@ -104,7 +104,7 @@ def test_bec_manifest_unexpected_validation_error() -> None:
     # We patch validator_for to raise a generic Exception
     with patch("coreason_validator.schemas.bec.validator_for", side_effect=Exception("Unexpected boom")):
         with pytest.raises(ValidationError) as excinfo:
-            TestCase(
+            BECTestCase(
                 id="test-unexpected",
                 prompt="Boom",
                 expected_output_structure=valid_schema,
@@ -141,7 +141,7 @@ def test_bec_manifest_complex_nested_schema() -> None:
         "additionalProperties": False,
     }
 
-    case = TestCase(
+    case = BECTestCase(
         id="test-complex",
         prompt="Generate complex data.",
         expected_output_structure=complex_schema,
@@ -162,7 +162,7 @@ def test_bec_manifest_invalid_schema_regex() -> None:
     }
 
     with pytest.raises(ValidationError) as excinfo:
-        TestCase(
+        BECTestCase(
             id="test-invalid-regex",
             prompt="Fail me regex.",
             expected_output_structure=invalid_regex_schema,
@@ -177,7 +177,7 @@ def test_bec_manifest_unicode_robustness() -> None:
     Test that high-bit Unicode characters are handled correctly in text fields.
     """
     unicode_str = "こんにちは 🌍 world"
-    case = TestCase(
+    case = BECTestCase(
         id=f"test-{unicode_str}",
         prompt=unicode_str,
         context_files=[f"{unicode_str}.txt"],
