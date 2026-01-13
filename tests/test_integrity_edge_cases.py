@@ -8,7 +8,7 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from coreason_validator.schemas.base import CoReasonBaseModel
 
@@ -23,6 +23,10 @@ class ListModel(CoReasonBaseModel):
 
 class ListOfDictsModel(CoReasonBaseModel):
     items: List[Dict[str, Any]]
+
+
+class TupleModel(CoReasonBaseModel):
+    items: Tuple[str, ...]
 
 
 def test_flat_dict_order_independence() -> None:
@@ -77,3 +81,110 @@ def test_unicode_consistency() -> None:
 
     m2 = DummyModel(data={"key": "café"})
     assert h1 == m2.canonical_hash()
+
+
+def test_empty_and_null_stability() -> None:
+    """Verify stability of empty structures and None."""
+    data: Dict[str, Any] = {
+        "empty_dict": {},
+        "empty_list": [],
+        "none_value": None,
+        "zero": 0,
+        "false": False,
+        "empty_string": "",
+    }
+    # Create two models with different insertion orders for these edge cases
+    m1 = DummyModel(data=data)
+
+    data_reversed = {
+        "empty_string": "",
+        "false": False,
+        "zero": 0,
+        "none_value": None,
+        "empty_list": [],
+        "empty_dict": {},
+    }
+    m2 = DummyModel(data=data_reversed)
+
+    assert m1.canonical_hash() == m2.canonical_hash()
+
+
+def test_numeric_string_key_sorting() -> None:
+    """
+    Verify sorting behavior of keys that look like numbers.
+    JSON keys are strings. "10" comes before "2" in lexicographical sort.
+    """
+    # "10" < "2" because '1' < '2'
+    data1 = {"2": "value2", "10": "value10"}
+    data2 = {"10": "value10", "2": "value2"}
+
+    m1 = DummyModel(data=data1)
+    m2 = DummyModel(data=data2)
+
+    assert m1.canonical_hash() == m2.canonical_hash()
+
+    # Just to double check, they should also produce the same hash as the manually sorted version
+    # But since we can't see the internal string, we rely on equality.
+
+
+def test_type_differentiation() -> None:
+    """Verify that integer 1 and string '1' hash differently (in values)."""
+    # keys are always strings in JSON, but values preserve type (mostly)
+    m1 = DummyModel(data={"val": 1})
+    m2 = DummyModel(data={"val": "1"})
+
+    assert m1.canonical_hash() != m2.canonical_hash()
+
+
+def test_tuple_vs_list_stability() -> None:
+    """Verify that Tuples are serialized as Lists and hashed consistently."""
+    # If a model defines a Tuple, Pydantic serializes it to a JSON Array (List)
+    m_tuple = TupleModel(items=("a", "b"))
+    m_list = ListModel(items=["a", "b"])
+
+    # The hash should likely be the same because canonical_hash uses model_dump(mode='json')
+    # which converts Tuple -> List.
+    # Note: Structure of model names doesn't affect hash, only the data (if hash function only dumps data).
+    # Wait, canonical_hash in base.py does: `self.model_dump(mode="json")`.
+    # It does NOT include the class name in the hash. So strict structural duck-typing applies.
+
+    # We need to verify if field names match. TupleModel has 'items', ListModel has 'items'.
+    # So { "items": ["a", "b"] } should be the result for both.
+
+    assert m_tuple.canonical_hash() == m_list.canonical_hash()
+
+
+def test_complex_nested_scenario() -> None:
+    """
+    A comprehensive test combining various edge cases:
+    - Nested dicts with mixed order
+    - Lists of dicts
+    - Unicode
+    - Empty structures
+    - Mixed types
+    """
+    data1 = {
+        "meta": {"version": 1, "author": "Jules"},
+        "payload": [
+            {"id": "A", "values": [1, 2, 3], "attributes": {"x": None, "y": ""}},
+            {"id": "B", "values": [], "attributes": {}},
+        ],
+        "flags": {"dry_run": False, "verbose": True},
+        "tags": ["café", "test"],
+    }
+
+    # scrambled order
+    data2 = {
+        "tags": ["café", "test"],  # List order must be preserved
+        "flags": {"verbose": True, "dry_run": False},  # Dict order scrambled
+        "payload": [
+            {"attributes": {"y": "", "x": None}, "values": [1, 2, 3], "id": "A"},  # keys scrambled
+            {"attributes": {}, "id": "B", "values": []},
+        ],
+        "meta": {"author": "Jules", "version": 1},  # keys scrambled
+    }
+
+    m1 = DummyModel(data=data1)
+    m2 = DummyModel(data=data2)
+
+    assert m1.canonical_hash() == m2.canonical_hash()
