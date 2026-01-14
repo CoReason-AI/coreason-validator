@@ -104,3 +104,48 @@ def test_topology_multiple_deep_components() -> None:
 
     graph = TopologyGraph(nodes=nodes)
     assert len(graph.nodes) == 2000
+
+
+def test_topology_cycle_in_second_component() -> None:
+    """
+    Test disconnected components where the second one has a cycle.
+    Chain A: 0 -> 1 (Valid)
+    Chain B: 2 -> 3 -> 2 (Cycle)
+    """
+    nodes = [
+        TopologyNode(id="0", step_type="start", next_steps=["1"]),
+        TopologyNode(id="1", step_type="end", next_steps=[]),
+        TopologyNode(id="2", step_type="start", next_steps=["3"]),
+        TopologyNode(id="3", step_type="process", next_steps=["2"]),
+    ]
+    with pytest.raises(ValidationError) as exc:
+        TopologyGraph(nodes=nodes)
+    assert "Cycle detected in topology: 2 -> 3 -> 2" in str(exc.value)
+
+
+def test_topology_grid_dag() -> None:
+    """
+    Test a Grid DAG: 20x20 grid where edges go Right and Down.
+    (x, y) -> (x+1, y) and (x, y+1)
+    This creates many overlapping paths to the bottom-right node.
+    Validates that the DFS doesn't explode exponentially (O(V+E)).
+    """
+    width, height = 20, 20
+    nodes = []
+    for x in range(width):
+        for y in range(height):
+            node_id = f"{x},{y}"
+            next_steps = []
+            if x < width - 1:
+                next_steps.append(f"{x + 1},{y}")
+            if y < height - 1:
+                next_steps.append(f"{x},{y + 1}")
+
+            nodes.append(TopologyNode(id=node_id, step_type="step", next_steps=next_steps))
+
+    # Total nodes = 400. Total edges ~ 800.
+    # Number of paths from (0,0) to (19,19) is C(38, 19) ~ 35 billion.
+    # Recursive naive DFS without correct memoization would timeout.
+    # Iterative DFS with visited set should be instant.
+    graph = TopologyGraph(nodes=nodes)
+    assert len(graph.nodes) == width * height
