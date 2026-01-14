@@ -217,3 +217,19 @@ def test_topology_large_chain() -> None:
 
     graph = TopologyGraph(nodes=nodes)
     assert len(graph.nodes) == chain_length
+
+
+def test_topology_deep_recursion_limit() -> None:
+    """
+    Test a chain deep enough to trigger RecursionError in recursive implementations.
+    Standard Python recursion limit is 1000. We test with 2000.
+    """
+    chain_length = 2000
+    nodes = []
+    for i in range(chain_length):
+        next_steps = [str(i + 1)] if i < chain_length - 1 else []
+        nodes.append(TopologyNode(id=str(i), step_type="step", next_steps=next_steps))
+
+    # Should not raise RecursionError or ValidationError
+    graph = TopologyGraph(nodes=nodes)
+    assert len(graph.nodes) == chain_length
