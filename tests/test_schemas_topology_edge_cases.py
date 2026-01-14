@@ -10,7 +10,9 @@
 
 import pytest
 from pydantic import ValidationError
+
 from coreason_validator.schemas.topology import TopologyGraph, TopologyNode
+
 
 def test_topology_deep_cycle() -> None:
     """
