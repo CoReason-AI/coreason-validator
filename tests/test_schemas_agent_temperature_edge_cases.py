@@ -104,7 +104,7 @@ def test_temperature_string_coercion() -> None:
         model_config_id="gpt-4-turbo",
         max_cost_limit=1.0,
         topology="t.json",
-        temperature="0.5",  # type: ignore
+        temperature="0.5",
     )
     assert m.temperature == 0.5
     assert isinstance(m.temperature, float)
@@ -117,7 +117,7 @@ def test_temperature_string_coercion() -> None:
             model_config_id="gpt-4-turbo",
             max_cost_limit=1.0,
             topology="t.json",
-            temperature="hot",  # type: ignore
+            temperature="hot",
         )
 
 
@@ -130,7 +130,7 @@ def test_temperature_explicit_none() -> None:
             model_config_id="gpt-4-turbo",
             max_cost_limit=1.0,
             topology="t.json",
-            temperature=None,  # type: ignore
+            temperature=None,
         )
     assert "type_error" in str(exc.value) or "Input should be a valid number" in str(exc.value)
 
