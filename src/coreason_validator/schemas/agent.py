@@ -36,7 +36,5 @@ class AgentManifest(CoReasonBaseModel):
         description="Must match allowlist in Manifest",
     )
     max_cost_limit: float = Field(gt=0.0, description="Maximum cost limit in dollars")
-    temperature: float = Field(
-        default=0.7, ge=0.0, le=1.0, description="LLM temperature setting (0.0 to 1.0)"
-    )
+    temperature: float = Field(default=0.7, ge=0.0, le=1.0, description="LLM temperature setting (0.0 to 1.0)")
     topology: str = Field(..., min_length=1, description="Path to the topology definition file")

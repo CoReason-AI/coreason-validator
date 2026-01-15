@@ -333,7 +333,7 @@ def test_temperature_validation() -> None:
             model_config_id="gpt-4-turbo",
             max_cost_limit=1.0,
             topology="t",
-            temperature="high",  # type: ignore
+            temperature="high",
         )
     # Pydantic V2 message for float type error is "Input should be a valid number"
     assert "float_parsing" in str(exc_type.value) or "Input should be a valid number" in str(exc_type.value)
