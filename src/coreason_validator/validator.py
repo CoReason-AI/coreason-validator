@@ -17,12 +17,10 @@ import yaml
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from coreason_validator.schemas.agent import AgentManifest
+from coreason_validator.registry import registry
 from coreason_validator.schemas.base import CoReasonBaseModel
-from coreason_validator.schemas.bec import BECManifest
 from coreason_validator.schemas.message import Message
 from coreason_validator.schemas.tool import ToolCall
-from coreason_validator.schemas.topology import TopologyGraph
 from coreason_validator.utils.logger import logger
 
 T = TypeVar("T", bound=CoReasonBaseModel)
@@ -87,14 +85,7 @@ def validate_object(data: Dict[str, Any], schema_type: Union[Type[T], str]) -> T
     schema_class: Type[T]
 
     if isinstance(schema_type, str):
-        lookup: Dict[str, Type[CoReasonBaseModel]] = {
-            "agent": AgentManifest,
-            "topology": TopologyGraph,
-            "bec": BECManifest,
-            "tool": ToolCall,
-            "message": Message,
-        }
-        found_class = lookup.get(schema_type.lower())
+        found_class = registry.get_schema(schema_type)
         if not found_class:
             raise ValueError(f"Unknown schema type alias: '{schema_type}'")
         # We need to cast because T is bound to CoReasonBaseModel but mypy needs help
@@ -239,17 +230,11 @@ def validate_file(
     schema_class: Optional[Type[CoReasonBaseModel]] = None
 
     if schema_type is None:
-        # Inference Logic
-        if "model_config" in content:
-            schema_class = AgentManifest
-        elif "corpus_id" in content:
-            schema_class = BECManifest
-        elif "nodes" in content:
-            schema_class = TopologyGraph
-        elif "tool_name" in content:
-            schema_class = ToolCall
-        else:
+        # Inference Logic using Registry
+        schema_class = registry.infer_schema(content)
+        if not schema_class:
             return ValidationResult(is_valid=False, errors=[{"msg": "Could not infer schema type from content."}])
+
     elif isinstance(schema_type, (str, type)):
         # Delegate resolution to validate_object's logic, but we need the class for ValidationResult if possible
         # Actually validate_object returns the instance, so we are good.
