@@ -29,6 +29,7 @@ def test_valid_agent_manifest() -> None:
     assert manifest.max_cost_limit == 10.0
     assert manifest.schema_version == "1.0"
     assert manifest.topology == "path/to/topology.json"
+    assert manifest.temperature == 0.7  # Default check
 
 
 def test_invalid_name_pattern() -> None:
@@ -266,3 +267,73 @@ def test_cost_edge_cases() -> None:
             max_cost_limit=float("nan"),
             topology="t.json",
         )
+
+
+def test_temperature_validation() -> None:
+    """Test validation logic for the temperature field."""
+    # Valid Cases
+    m1 = AgentManifest(
+        name="t1",
+        version="1.0.0",
+        model_config_id="gpt-4-turbo",
+        max_cost_limit=1.0,
+        topology="t",
+        temperature=0.0,
+    )
+    assert m1.temperature == 0.0
+
+    m2 = AgentManifest(
+        name="t2",
+        version="1.0.0",
+        model_config_id="gpt-4-turbo",
+        max_cost_limit=1.0,
+        topology="t",
+        temperature=1.0,
+    )
+    assert m2.temperature == 1.0
+
+    m3 = AgentManifest(
+        name="t3",
+        version="1.0.0",
+        model_config_id="gpt-4-turbo",
+        max_cost_limit=1.0,
+        topology="t",
+        temperature=0.5,
+    )
+    assert m3.temperature == 0.5
+
+    # Invalid Cases (Out of range)
+    with pytest.raises(ValidationError) as exc_low:
+        AgentManifest(
+            name="t4",
+            version="1.0.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t",
+            temperature=-0.1,
+        )
+    assert "greater_than_equal" in str(exc_low.value)
+
+    with pytest.raises(ValidationError) as exc_high:
+        AgentManifest(
+            name="t5",
+            version="1.0.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t",
+            temperature=1.1,
+        )
+    assert "less_than_equal" in str(exc_high.value)
+
+    # Invalid Type
+    with pytest.raises(ValidationError) as exc_type:
+        AgentManifest(
+            name="t6",
+            version="1.0.0",
+            model_config_id="gpt-4-turbo",
+            max_cost_limit=1.0,
+            topology="t",
+            temperature="high",
+        )
+    # Pydantic V2 message for float type error is "Input should be a valid number"
+    assert "float_parsing" in str(exc_type.value) or "Input should be a valid number" in str(exc_type.value)
