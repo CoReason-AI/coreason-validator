@@ -3,3 +3,6 @@ theme:
   name: material
 nav:
   - Home: index.md
+  - Usage: usage.md
+  - Architecture: architecture.md
+  - Requirements: requirements.md
