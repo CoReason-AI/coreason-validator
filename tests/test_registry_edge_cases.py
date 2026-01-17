@@ -10,9 +10,6 @@
 
 from typing import Literal
 
-import pytest
-from pydantic import ValidationError
-
 from coreason_validator.registry import SchemaRegistry, registry
 from coreason_validator.schemas.base import CoReasonBaseModel
 from coreason_validator.validator import validate_object
@@ -99,7 +96,8 @@ def test_complex_dynamic_runtime_extension() -> None:
         dynamic_field: str
 
     # 2. Register with global registry
-    # We use a unique alias to avoid clashing with other tests running in parallel (though pytest is usually sequential per worker)
+    # We use a unique alias to avoid clashing with other tests running in parallel
+    # (though pytest is usually sequential per worker)
     alias = "runtime_extension_test"
     registry.register(alias, RuntimeSchema, lambda d: "dynamic_field" in d)
 
@@ -111,7 +109,14 @@ def test_complex_dynamic_runtime_extension() -> None:
         data = {"dynamic_field": "hello world"}
 
         # Test explicit alias lookup validation
-        result = validate_object(data, alias)
+        result: RuntimeSchema = validate_object(data, alias)  # type: ignore
+        # The return type of validate_object is T (CoReasonBaseModel), but we know it's RuntimeSchema.
+        # Mypy might complain if we assign to a variable typed as RuntimeSchema without a cast,
+        # or it complained about 'result' missing annotation in general.
+        # The error was "Need type annotation for 'result'".
+        # Since validate_object returns T, and here we pass a string, T is inferred as CoReasonBaseModel.
+        # RuntimeSchema inherits from CoReasonBaseModel.
+
         assert isinstance(result, RuntimeSchema)
         assert result.dynamic_field == "hello world"
 
