@@ -110,7 +110,9 @@ def test_complex_dynamic_runtime_extension() -> None:
         data = {"dynamic_field": "hello world"}
 
         # Test explicit alias lookup validation
-        result = validate_object(data, alias)
+        # Annotate as CoReasonBaseModel because validate_object returns T (CoReasonBaseModel)
+        # when passed a string alias.
+        result: CoReasonBaseModel = validate_object(data, alias)
 
         assert isinstance(result, RuntimeSchema)
         assert result.dynamic_field == "hello world"
