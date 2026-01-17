@@ -8,32 +8,45 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
+import os
 import sys
-from pathlib import Path
 
 from loguru import logger
+
+# Configuration from Environment Variables
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "logs/app.log")
 
 # Remove default handler
 logger.remove()
 
-# Sink 1: Stdout (Human-readable)
+# Add Console Handler (stderr)
 logger.add(
     sys.stderr,
-    level="INFO",
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    level=LOG_LEVEL,
+    format=(
+        "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>"
+    ),
 )
 
-# Ensure logs directory exists
-log_path = Path("logs")
-if not log_path.exists():
-    log_path.mkdir(parents=True, exist_ok=True)
+# Add File Handler (JSON formatted)
+# Ensure directory exists
+os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
-# Sink 2: File (JSON, Rotation, Retention)
+# We use 'serialize=True' for built-in JSON, but AGENTS.md implies JSON-formatted.
+# Loguru's serialize=True does a good job.
 logger.add(
-    "logs/app.log",
-    rotation="500 MB",
+    LOG_FILE_PATH,
+    level=LOG_LEVEL,
+    rotation="500 MB",  # or "1 day" - AGENTS.md said "500 MB or 1 day", loguru allows one.
+    # We can pass retention.
     retention="10 days",
-    serialize=True,
-    enqueue=True,
-    level="INFO",
+    serialize=True,  # This outputs JSON
+    enqueue=True,  # Thread safety
 )
+
+# Export logger
+__all__ = ["logger"]
