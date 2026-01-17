@@ -1,3 +1,14 @@
+# Copyright (c) 2025 CoReason, Inc.
+#
+# This software is proprietary and dual-licensed.
+# Licensed under the Prosperity Public License 3.0 (the "License").
+# A copy of the license is available at https://prosperitylicense.com/versions/3.0.0
+# For details, see the LICENSE file.
+# Commercial use beyond a 30-day trial requires a separate license.
+#
+# Source Code: https://github.com/CoReason-AI/coreason_validator
+
+
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import ConfigDict, Field, model_validator
@@ -49,35 +60,41 @@ class TopologyGraph(CoReasonBaseModel):
                 if next_id not in node_map:
                     raise ValueError(f"Node '{node.id}' points to non-existent node ID: '{next_id}'")
 
-        # 3. Cycle Detection (Custom DFS)
+        # 3. Cycle Detection (Iterative DFS)
         # States: 0 = unvisited, 1 = visiting (recursion stack), 2 = visited
         visited: Dict[str, int] = {node.id: 0 for node in self.nodes}
 
-        def dfs(current_id: str, path: List[str]) -> None:
-            visited[current_id] = 1  # Mark as visiting
-            path.append(current_id)
+        for start_node_id in node_map:
+            if visited[start_node_id] == 0:
+                # Stack stores tuples of (node_id, iter_neighbors)
+                # where iter_neighbors is an iterator over the current node's neighbors
+                stack = [(start_node_id, iter(node_map[start_node_id].next_steps))]
+                visited[start_node_id] = 1  # Mark as visiting
 
-            current_node = node_map[current_id]
-            for neighbor_id in current_node.next_steps:
-                if visited[neighbor_id] == 1:
-                    # Cycle detected
+                while stack:
+                    parent, children = stack[-1]
                     try:
-                        start_index = path.index(neighbor_id)
-                        cycle_path = path[start_index:] + [neighbor_id]
-                        cycle_str = " -> ".join(cycle_path)
-                    except ValueError:  # pragma: no cover
-                        cycle_str = f"Unknown cycle involving {neighbor_id}"
+                        child = next(children)
+                        if visited[child] == 1:
+                            # Cycle detected
+                            # Reconstruct path from stack
+                            path = [s[0] for s in stack]
+                            try:
+                                start_index = path.index(child)
+                                cycle_path = path[start_index:] + [child]
+                                cycle_str = " -> ".join(cycle_path)
+                            except ValueError:  # pragma: no cover
+                                cycle_str = f"Unknown cycle involving {child}"
 
-                    raise ValueError(f"Cycle detected in topology: {cycle_str}")
+                            raise ValueError(f"Cycle detected in topology: {cycle_str}")
 
-                if visited[neighbor_id] == 0:
-                    dfs(neighbor_id, path)
+                        if visited[child] == 0:
+                            visited[child] = 1
+                            stack.append((child, iter(node_map[child].next_steps)))
 
-            path.pop()
-            visited[current_id] = 2  # Mark as fully visited
-
-        for node in self.nodes:
-            if visited[node.id] == 0:
-                dfs(node.id, [])
+                    except StopIteration:
+                        # All neighbors visited
+                        stack.pop()
+                        visited[parent] = 2  # Mark as fully visited
 
         return self

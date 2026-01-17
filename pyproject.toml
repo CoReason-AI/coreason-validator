@@ -7,6 +7,9 @@ license = "Prosperity-3.0"
 readme = "README.md"
 packages = [{include = "coreason_validator", from = "src"}]
 
+[tool.poetry.scripts]
+coreason-val = "coreason_validator.cli:main"
+
 [tool.poetry.dependencies]
 python = ">=3.12, <3.15"
 loguru = "^0.7.2"
@@ -22,6 +25,7 @@ pytest-cov = "^5.0.0"
 mkdocs = "^1.6.0"
 mkdocs-material = "^9.5.26"
 types-pyyaml = "^6.0.12.20250915"
+mypy = "^1.19.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -60,6 +64,7 @@ ignore = []
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=src --cov-report=term-missing --cov-fail-under=100"

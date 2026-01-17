@@ -1,3 +1,13 @@
+# Copyright (c) 2025 CoReason, Inc.
+#
+# This software is proprietary and dual-licensed.
+# Licensed under the Prosperity Public License 3.0 (the "License").
+# A copy of the license is available at https://prosperitylicense.com/versions/3.0.0
+# For details, see the LICENSE file.
+# Commercial use beyond a 30-day trial requires a separate license.
+#
+# Source Code: https://github.com/CoReason-AI/coreason_validator
+
 import pytest
 from pydantic import ValidationError
 
@@ -205,5 +215,21 @@ def test_topology_large_chain() -> None:
         next_steps = [str(i + 1)] if i < chain_length - 1 else []
         nodes.append(TopologyNode(id=str(i), step_type="step", next_steps=next_steps))
 
+    graph = TopologyGraph(nodes=nodes)
+    assert len(graph.nodes) == chain_length
+
+
+def test_topology_deep_recursion_limit() -> None:
+    """
+    Test a chain deep enough to trigger RecursionError in recursive implementations.
+    Standard Python recursion limit is 1000. We test with 2000.
+    """
+    chain_length = 2000
+    nodes = []
+    for i in range(chain_length):
+        next_steps = [str(i + 1)] if i < chain_length - 1 else []
+        nodes.append(TopologyNode(id=str(i), step_type="step", next_steps=next_steps))
+
+    # Should not raise RecursionError or ValidationError
     graph = TopologyGraph(nodes=nodes)
     assert len(graph.nodes) == chain_length

@@ -36,8 +36,9 @@ def test_validate_file_json_success(temp_dir: Path) -> None:
         "schema_version": "1.0",
         "name": "test-agent",
         "version": "1.0.0",
-        "model_config": "gpt-4",
+        "model_config": "gpt-4-turbo",
         "max_cost_limit": 10.0,
+        "topology": "path/to/topo.json",
     }
     file_path = temp_dir / "agent.json"
     file_path.write_text(json.dumps(data))
@@ -56,8 +57,9 @@ def test_validate_file_yaml_success(temp_dir: Path) -> None:
         "schema_version": "1.0",
         "name": "test-agent-yaml",
         "version": "1.0.0",
-        "model_config": "gpt-4",
+        "model_config": "gpt-4-turbo",
         "max_cost_limit": 5.0,
+        "topology": "path/to/topo.yaml",
     }
     file_path = temp_dir / "agent.yaml"
     file_path.write_text(yaml.dump(data))
@@ -75,8 +77,9 @@ def test_validate_file_schema_inference(temp_dir: Path) -> None:
         "schema_version": "1.0",
         "name": "inferred-agent",
         "version": "1.0.0",
-        "model_config": "gpt-4",
+        "model_config": "gpt-4-turbo",
         "max_cost_limit": 10.0,
+        "topology": "topo.json",
     }
     file_path = temp_dir / "agent_inferred.yaml"
     file_path.write_text(yaml.dump(agent_data))
@@ -137,6 +140,7 @@ def test_validate_file_validation_error(temp_dir: Path) -> None:
     # Check structure of error
     err = result.errors[0]
     assert "msg" in err
+    assert "loc" in err
 
 
 def test_validate_file_parse_error(temp_dir: Path) -> None:
@@ -196,8 +200,9 @@ def test_validate_file_fallback_parsing(temp_dir: Path) -> None:
         "schema_version": "1.0",
         "name": "txt-agent",
         "version": "1.0.0",
-        "model_config": "gpt",
+        "model_config": "gpt-4-turbo",
         "max_cost_limit": 1.0,
+        "topology": "t.json",
     }
 
     # Text file with JSON
@@ -243,4 +248,7 @@ def test_validate_file_unknown_alias(temp_dir: Path) -> None:
 
     result = validate_file(file_path, schema_type="unknown_alias")
     assert not result.is_valid
+    # The error message from validate_object bubbles up as ValueError, but validate_file catches it?
+    # Actually validate_file has:
+    # except ValueError as e: return ValidationResult(..., errors=[{"msg": str(e)}])
     assert "Unknown schema type alias" in str(result.errors)
