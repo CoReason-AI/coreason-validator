@@ -21,7 +21,7 @@ from .validator import (
     validate_tool_call,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Gowtham A Rao"
 __email__ = "gowtham.rao@coreason.ai"
 
