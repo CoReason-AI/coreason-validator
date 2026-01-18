@@ -4,6 +4,9 @@
 [![License](https://img.shields.io/badge/License-Prosperity%203.0-blue.svg)](https://prosperitylicense.com/versions/3.0.0)
 [![Python](https://img.shields.io/badge/python-3.12%20|%203.13%20|%203.14-blue)](https://www.python.org/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![codecov](https://codecov.io/gh/CoReason-AI/coreason_validator/graph/badge.svg?token=placeholder)](https://codecov.io/gh/CoReason-AI/coreason_validator)
+[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 Enforces structural integrity across the entire CoReason ecosystem.
 
