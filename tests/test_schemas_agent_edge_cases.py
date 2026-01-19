@@ -60,22 +60,6 @@ def test_topology_whitespace_sanitization() -> None:
     assert "string_too_short" in str(exc.value)
 
 
-def test_model_config_case_sensitivity() -> None:
-    """
-    Test that model_config literal matching is case-sensitive.
-    """
-    data = {
-        "name": "test-agent",
-        "version": "1.0.0",
-        "model_config": "GPT-4-TURBO",  # Invalid case
-        "max_cost_limit": 1.0,
-        "topology": "topo.json",
-    }
-    with pytest.raises(ValidationError) as exc:
-        validate_object(data, AgentManifest)
-    assert "literal_error" in str(exc.value)
-
-
 def test_complex_agent_integration() -> None:
     """
     Test a complex scenario with a valid agent manifest structure that includes

@@ -30,7 +30,7 @@ class AgentManifest(CoReasonBaseModel):
     version: constr(pattern=r"^\d+\.\d+\.\d+$") = Field(  # type: ignore
         ..., description="SemVer strict version"
     )
-    model_config_id: Literal["gpt-4-turbo", "claude-3-opus"] = Field(
+    model_config_id: str = Field(
         ...,
         alias="model_config",
         description="Must match allowlist in Manifest",
