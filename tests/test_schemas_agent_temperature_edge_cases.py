@@ -9,8 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from coreason_validator.schemas.agent import AgentManifest
 from pydantic import ValidationError
+
+from coreason_validator.schemas.agent import AgentManifest
 
 
 def test_temperature_precision_edges() -> None:

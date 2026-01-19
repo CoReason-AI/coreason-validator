@@ -9,8 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from coreason_validator.schemas.topology import TopologyGraph, TopologyNode
 from pydantic import ValidationError
+
+from coreason_validator.schemas.topology import TopologyGraph, TopologyNode
 
 
 def test_topology_valid_linear() -> None:

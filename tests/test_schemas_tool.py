@@ -11,8 +11,9 @@
 from typing import Any
 
 import pytest
-from coreason_validator.schemas.tool import ToolCall
 from pydantic import ValidationError
+
+from coreason_validator.schemas.tool import ToolCall
 
 
 def test_valid_tool_call() -> None:
