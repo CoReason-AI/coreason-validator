@@ -8,7 +8,10 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
-from coreason_validator.schemas.scribe import DocumentationManifest, TraceabilityMatrix
+import pytest
+from pydantic import ValidationError
+
+from coreason_validator.schemas.scribe import DocumentationManifest, ReviewPacket, TraceabilityMatrix
 
 
 def test_valid_documentation_manifest() -> None:
@@ -16,3 +19,37 @@ def test_valid_documentation_manifest() -> None:
     manifest = DocumentationManifest(agent_version="1.0.0", bom_hash="abc123hash", matrix=[matrix])
     assert manifest.agent_version == "1.0.0"
     assert manifest.matrix[0].req_id == "REQ-001"
+
+
+def test_valid_review_packet() -> None:
+    packet = ReviewPacket(
+        packet_id="packet-1",
+        agent_name="agent-1",
+        original_content="original",
+        generated_content="generated",
+        diff_summary="summary",
+        risk_score=0.5,
+    )
+    assert packet.risk_score == 0.5
+
+
+def test_invalid_review_packet_risk_score() -> None:
+    with pytest.raises(ValidationError):
+        ReviewPacket(
+            packet_id="packet-1",
+            agent_name="agent-1",
+            original_content="original",
+            generated_content="generated",
+            diff_summary="summary",
+            risk_score=1.5,
+        )
+
+    with pytest.raises(ValidationError):
+        ReviewPacket(
+            packet_id="packet-1",
+            agent_name="agent-1",
+            original_content="original",
+            generated_content="generated",
+            diff_summary="summary",
+            risk_score=-0.1,
+        )
