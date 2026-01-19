@@ -10,6 +10,8 @@
 
 from typing import List
 
+from pydantic import Field
+
 from coreason_validator.schemas.base import CoReasonBaseModel
 
 
@@ -27,3 +29,17 @@ class DocumentationManifest(CoReasonBaseModel):
     agent_version: str
     bom_hash: str
     matrix: List[TraceabilityMatrix]
+
+
+class ReviewPacket(CoReasonBaseModel):
+    """
+    Data object sent to UI for human sign-off.
+    Contains the 'Before vs After' for semantic comparison.
+    """
+
+    packet_id: str
+    agent_name: str
+    original_content: str
+    generated_content: str
+    diff_summary: str  # Natural language summary of changes
+    risk_score: float = Field(..., ge=0.0, le=1.0)
