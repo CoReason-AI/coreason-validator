@@ -71,18 +71,16 @@ def test_invalid_cost_limit() -> None:
     assert "greater_than" in str(exc.value)
 
 
-def test_invalid_model_config() -> None:
-    """Test that model_config must be one of the allowed literals."""
-    with pytest.raises(ValidationError) as exc:
-        AgentManifest(
-            name="test-agent",
-            version="1.0.0",
-            model_config_id="gpt-3.5-turbo",  # Invalid: not in allowed list
-            max_cost_limit=10.0,
-            topology="topo.json",
-        )
-    assert "literal_error" in str(exc.value)
-    # Check that valid options are mentioned in error message (optional, depends on Pydantic version)
+def test_custom_model_config() -> None:
+    """Test that custom model config IDs are allowed."""
+    manifest = AgentManifest(
+        name="test-agent",
+        version="1.0.0",
+        model_config_id="llama-3-oncology-v1",
+        max_cost_limit=10.0,
+        topology="topo.json",
+    )
+    assert manifest.model_config_id == "llama-3-oncology-v1"
 
 
 def test_missing_topology() -> None:
