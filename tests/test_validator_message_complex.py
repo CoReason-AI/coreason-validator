@@ -12,9 +12,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 import pytest
-from pydantic import ValidationError
-
 from coreason_validator.validator import validate_message
+from pydantic import ValidationError
 
 
 def test_message_whitespace_sanitization_failure() -> None:

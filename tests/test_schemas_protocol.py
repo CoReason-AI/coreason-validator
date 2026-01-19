@@ -8,25 +8,14 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
-import pytest
-from coreason_validator.schemas.protocol import ProtocolDefinition, PicoBlock, OntologyTerm
+from coreason_validator.schemas.protocol import OntologyTerm, PicoBlock, ProtocolDefinition
 
-def test_valid_protocol_definition():
-    term = OntologyTerm(
-        id="term1",
-        label="Term 1",
-        code="T1",
-        vocab_source="SNOMED"
-    )
-    pico = PicoBlock(
-        description="Patients with diabetes",
-        terms=[term]
-    )
+
+def test_valid_protocol_definition() -> None:
+    term = OntologyTerm(id="term1", label="Term 1", code="T1", vocab_source="SNOMED")
+    pico = PicoBlock(description="Patients with diabetes", terms=[term])
     protocol = ProtocolDefinition(
-        id="proto1",
-        research_question="Does X cause Y?",
-        pico_structure={"P": pico},
-        status="DRAFT"
+        id="proto1", research_question="Does X cause Y?", pico_structure={"P": pico}, status="DRAFT"
     )
     assert protocol.id == "proto1"
     assert protocol.pico_structure["P"].terms[0].code == "T1"

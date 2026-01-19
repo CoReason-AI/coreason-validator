@@ -12,11 +12,10 @@ from datetime import datetime
 from typing import Any, Dict
 
 import pytest
-from pydantic import ValidationError
-
 from coreason_validator.schemas.base import CoReasonBaseModel
 from coreason_validator.schemas.message import Message
 from coreason_validator.validator import validate_message, validate_object
+from pydantic import ValidationError
 
 
 def test_validate_message_success() -> None:

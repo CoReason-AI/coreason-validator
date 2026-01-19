@@ -9,8 +9,11 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 from enum import Enum
+
 from pydantic import Field
+
 from coreason_validator.schemas.base import CoReasonBaseModel
+
 
 class DataSensitivity(str, Enum):
     PUBLIC = "PUBLIC"
@@ -18,8 +21,10 @@ class DataSensitivity(str, Enum):
     PII = "PII"
     GXP_LOCKED = "GXP_LOCKED"
 
+
 class SourceManifest(CoReasonBaseModel):
     """Defines a data source for the Catalog."""
+
     urn: str = Field(..., pattern=r"^urn:coreason:mcp:[a-z0-9_]+$")
     name: str
     description: str

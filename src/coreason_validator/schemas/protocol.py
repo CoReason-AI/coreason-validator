@@ -9,7 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 from typing import Dict, List
+
 from coreason_validator.schemas.base import CoReasonBaseModel
+
 
 class OntologyTerm(CoReasonBaseModel):
     id: str
@@ -17,13 +19,16 @@ class OntologyTerm(CoReasonBaseModel):
     code: str
     vocab_source: str
 
+
 class PicoBlock(CoReasonBaseModel):
     description: str
     terms: List[OntologyTerm]
 
+
 class ProtocolDefinition(CoReasonBaseModel):
     """The rigorous study design object."""
+
     id: str
     research_question: str
-    pico_structure: Dict[str, PicoBlock] # Keys usually: P, I, C, O
-    status: str # e.g., DRAFT, APPROVED
+    pico_structure: Dict[str, PicoBlock]  # Keys usually: P, I, C, O
+    status: str  # e.g., DRAFT, APPROVED

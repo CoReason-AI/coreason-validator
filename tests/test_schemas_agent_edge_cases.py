@@ -9,10 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from pydantic import ValidationError
-
 from coreason_validator.schemas.agent import AgentManifest
 from coreason_validator.validator import validate_object
+from pydantic import ValidationError
 
 
 def test_topology_empty_string() -> None:

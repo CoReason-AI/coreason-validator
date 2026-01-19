@@ -9,16 +9,21 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 from typing import List
+
 from coreason_validator.schemas.base import CoReasonBaseModel
+
 
 class TraceabilityMatrix(CoReasonBaseModel):
     """Links Requirements to Test Results."""
+
     req_id: str
     test_ids: List[str]
-    coverage_status: str # COVERED, GAP
+    coverage_status: str  # COVERED, GAP
+
 
 class DocumentationManifest(CoReasonBaseModel):
     """The master index for the Audit Package."""
+
     agent_version: str
     bom_hash: str
     matrix: List[TraceabilityMatrix]
