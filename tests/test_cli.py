@@ -14,7 +14,6 @@ from typing import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from coreason_validator.cli import main
 from coreason_validator.validator import ValidationResult
 

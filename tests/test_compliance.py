@@ -9,7 +9,6 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-
 from coreason_validator.validator import check_compliance
 
 

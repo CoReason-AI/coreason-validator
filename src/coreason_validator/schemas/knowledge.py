@@ -18,6 +18,7 @@ from coreason_validator.schemas.base import CoReasonBaseModel
 
 class ArtifactType(str, Enum):
     """Enumeration of supported knowledge artifact types."""
+
     TEXT = "TEXT"
     TABLE = "TABLE"
     IMAGE = "IMAGE"
@@ -39,14 +40,12 @@ class KnowledgeArtifact(CoReasonBaseModel):
     # Lineage (The "Where")
     source_urn: str = Field(..., description="URN of the source file (e.g., urn:s3:bucket/file.pdf)")
     source_location: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Pointer to location (page_number, bbox, slide_index)"
+        default_factory=dict, description="Pointer to location (page_number, bbox, slide_index)"
     )
 
     # Semantics (The "Meaning")
     vector: Optional[List[float]] = Field(
-        default=None,
-        description="Embedding vector (optional, can be computed late-bound)"
+        default=None, description="Embedding vector (optional, can be computed late-bound)"
     )
     tags: List[str] = Field(default_factory=list, description="Semantic tags or entities")
 
