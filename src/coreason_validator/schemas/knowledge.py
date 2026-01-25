@@ -25,6 +25,13 @@ class ArtifactType(str, Enum):
     MOLECULE = "MOLECULE"
 
 
+class EnrichmentLevel(str, Enum):
+    """Enumeration of enrichment levels for knowledge artifacts."""
+
+    RAW = "RAW"
+    TAGGED = "TAGGED"
+
+
 class KnowledgeArtifact(CoReasonBaseModel):
     """
     The Universal 'Atom' of Knowledge.
@@ -48,6 +55,9 @@ class KnowledgeArtifact(CoReasonBaseModel):
         default=None, description="Embedding vector (optional, can be computed late-bound)"
     )
     tags: List[str] = Field(default_factory=list, description="Semantic tags or entities")
+    enrichment_level: EnrichmentLevel = Field(
+        default=EnrichmentLevel.RAW, description="The processing status of the artifact"
+    )
 
     # Access Control (The "Who")
     sensitivity: str = Field(default="INTERNAL", description="Data sensitivity level")

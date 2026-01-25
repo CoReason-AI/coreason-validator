@@ -11,7 +11,7 @@
 import pytest
 from pydantic import ValidationError
 
-from coreason_validator.schemas.knowledge import ArtifactType, KnowledgeArtifact
+from coreason_validator.schemas.knowledge import ArtifactType, EnrichmentLevel, KnowledgeArtifact
 
 
 def test_knowledge_artifact_minimal() -> None:
@@ -24,6 +24,7 @@ def test_knowledge_artifact_minimal() -> None:
     assert artifact.source_location == {}
     assert artifact.vector is None
     assert artifact.tags == []
+    assert artifact.enrichment_level == EnrichmentLevel.RAW
     assert artifact.sensitivity == "INTERNAL"
 
 
@@ -37,12 +38,14 @@ def test_knowledge_artifact_full() -> None:
         source_location={"page": 1, "bbox": [0, 0, 100, 100]},
         vector=[0.1, 0.2, 0.3],
         tags=["image", "logo"],
+        enrichment_level=EnrichmentLevel.TAGGED,
         sensitivity="CONFIDENTIAL",
     )
     assert artifact.artifact_type == ArtifactType.IMAGE
     assert artifact.source_location["page"] == 1
     assert artifact.vector == [0.1, 0.2, 0.3]
     assert artifact.tags == ["image", "logo"]
+    assert artifact.enrichment_level == EnrichmentLevel.TAGGED
     assert artifact.sensitivity == "CONFIDENTIAL"
 
 

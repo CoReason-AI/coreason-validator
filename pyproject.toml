@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "coreason_validator"
-version = "0.4.0"
+version = "0.5.0"
 description = "Enforces structural integrity across the entire CoReason ecosystem"
 authors = ["Gowtham A Rao <gowtham.rao@coreason.ai>"]
 license = "Prosperity-3.0"
 readme = "README.md"
-packages = [{include = "coreason_validator", from = "src"}]
+packages = [{include = "coreason_validator", from = "src"}, {include = "coreason_veritas", from = "src"}]
 
 [tool.poetry.scripts]
 coreason-val = "coreason_validator.cli:main"
@@ -16,6 +16,8 @@ loguru = "^0.7.2"
 pydantic = "^2.12.5"
 jsonschema = "^4.26.0"
 pyyaml = "^6.0.3"
+fastapi = "^0.111.0"
+uvicorn = "^0.30.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
@@ -33,7 +35,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "coreason_validator"
-version = "0.4.0"
+version = "0.5.0"
 description = "Enforces structural integrity across the entire CoReason ecosystem"
 readme = "README.md"
 requires-python = ">=3.11"
