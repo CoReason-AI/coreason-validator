@@ -14,6 +14,7 @@ from coreason_validator.schemas.base import CoReasonBaseModel
 from coreason_validator.schemas.bec import BECManifest, BECTestCase
 from coreason_validator.schemas.catalog import SourceManifest
 from coreason_validator.schemas.events import GraphEvent, NodeState
+from coreason_validator.schemas.knowledge import ArtifactType, KnowledgeArtifact
 from coreason_validator.schemas.protocol import ProtocolDefinition
 from coreason_validator.schemas.scribe import DocumentationManifest, ReviewPacket, TraceabilityMatrix
 from coreason_validator.schemas.tool import ToolCall
@@ -29,6 +30,8 @@ __all__ = [
     "SourceManifest",
     "GraphEvent",
     "NodeState",
+    "KnowledgeArtifact",
+    "ArtifactType",
     "ProtocolDefinition",
     "TraceabilityMatrix",
     "DocumentationManifest",
