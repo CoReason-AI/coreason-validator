@@ -10,8 +10,9 @@
 
 from typing import Any, Dict, List
 
-from coreason_validator.schemas.base import CoReasonBaseModel
 from pydantic import ConfigDict
+
+from coreason_validator.schemas.base import CoReasonBaseModel
 
 
 class ComplexModel(CoReasonBaseModel):

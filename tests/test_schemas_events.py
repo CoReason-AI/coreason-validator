@@ -9,8 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from coreason_validator.schemas.events import GraphEvent, NodeState
 from pydantic import ValidationError
+
+from coreason_validator.schemas.events import GraphEvent, NodeState
 
 
 def test_valid_graph_event() -> None:

@@ -11,8 +11,9 @@
 from datetime import datetime, timezone
 
 import pytest
-from coreason_validator.schemas.audit import SignatureEvent, SignatureRole
 from pydantic import ValidationError
+
+from coreason_validator.schemas.audit import SignatureEvent, SignatureRole
 
 
 def test_valid_signature_event() -> None:

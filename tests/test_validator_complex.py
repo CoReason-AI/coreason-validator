@@ -15,6 +15,7 @@ from typing import Iterator
 from unittest.mock import patch
 
 import pytest
+
 from coreason_validator.schemas.agent import AgentManifest
 from coreason_validator.validator import validate_file
 

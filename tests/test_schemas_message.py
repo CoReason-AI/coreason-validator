@@ -11,8 +11,9 @@
 from datetime import datetime
 
 import pytest
-from coreason_validator.schemas.message import Message
 from pydantic import ValidationError
+
+from coreason_validator.schemas.message import Message
 
 
 def test_message_valid_creation() -> None:

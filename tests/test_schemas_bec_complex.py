@@ -9,8 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from coreason_validator.schemas.bec import BECManifest, BECTestCase
 from pydantic import ValidationError
+
+from coreason_validator.schemas.bec import BECManifest, BECTestCase
 
 
 def test_bectestcase_hash_stability() -> None:

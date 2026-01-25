@@ -9,8 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from coreason_validator.schemas.scribe import DocumentationManifest, ReviewPacket, TraceabilityMatrix
 from pydantic import ValidationError
+
+from coreason_validator.schemas.scribe import DocumentationManifest, ReviewPacket, TraceabilityMatrix
 
 
 def test_valid_documentation_manifest() -> None:

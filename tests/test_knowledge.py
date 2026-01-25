@@ -9,8 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from coreason_validator.schemas.knowledge import ArtifactType, KnowledgeArtifact
 from pydantic import ValidationError
+
+from coreason_validator.schemas.knowledge import ArtifactType, KnowledgeArtifact
 
 
 def test_knowledge_artifact_minimal() -> None:

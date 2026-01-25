@@ -16,6 +16,7 @@ from unittest.mock import patch
 
 import pytest
 import yaml
+
 from coreason_validator.schemas.agent import AgentManifest
 from coreason_validator.schemas.bec import BECManifest
 from coreason_validator.schemas.tool import ToolCall
