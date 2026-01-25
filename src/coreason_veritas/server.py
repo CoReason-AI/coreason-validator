@@ -15,7 +15,7 @@ from loguru import logger
 from coreason_validator.schemas.knowledge import KnowledgeArtifact
 from coreason_veritas.policies.data_quality import QualityPolicy
 
-app = FastAPI()
+app: FastAPI = FastAPI()
 
 
 @app.post("/audit/artifact")
