@@ -25,6 +25,12 @@ class ArtifactType(str, Enum):
     MOLECULE = "MOLECULE"
 
 
+class EnrichmentLevel(str, Enum):
+    RAW = "RAW"  # Just content (from Refinery)
+    TAGGED = "TAGGED"  # Has entities (from Tagger)
+    LINKED = "LINKED"  # Entities linked to Ontology (from Codex)
+
+
 class KnowledgeArtifact(CoReasonBaseModel):
     """
     The Universal 'Atom' of Knowledge.
@@ -48,6 +54,16 @@ class KnowledgeArtifact(CoReasonBaseModel):
         default=None, description="Embedding vector (optional, can be computed late-bound)"
     )
     tags: List[str] = Field(default_factory=list, description="Semantic tags or entities")
+
+    entities: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Structured entities extracted by Coreason Tagger (Service B)",
+    )
+
+    enrichment_level: EnrichmentLevel = Field(
+        default=EnrichmentLevel.RAW,
+        description="Quality gate status. Service A produces RAW; API promotes to TAGGED.",
+    )
 
     # Access Control (The "Who")
     sensitivity: str = Field(default="INTERNAL", description="Data sensitivity level")
