@@ -11,7 +11,7 @@
 
 import json
 from pathlib import Path
-from typing import Type
+from typing import Any, Dict, Type
 
 from coreason_validator.schemas.agent import AgentManifest
 from coreason_validator.schemas.base import CoReasonBaseModel
@@ -19,6 +19,20 @@ from coreason_validator.schemas.bec import BECManifest
 from coreason_validator.schemas.tool import ToolCall
 from coreason_validator.schemas.topology import TopologyGraph
 from coreason_validator.utils.logger import logger
+from coreason_validator.validator import ValidationResult
+
+
+def generate_validation_report(result: ValidationResult) -> Dict[str, Any]:
+    """
+    Generates a structured validation report including metadata.
+
+    Args:
+        result: The ValidationResult object.
+
+    Returns:
+        A dictionary representation of the report.
+    """
+    return result.model_dump()
 
 
 def export_json_schema(output_dir: Path) -> None:
