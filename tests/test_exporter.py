@@ -15,7 +15,8 @@ from typing import Any
 import pytest
 
 from coreason_validator.schemas.agent import AgentManifest
-from coreason_validator.utils.exporter import export_json_schema
+from coreason_validator.utils.exporter import export_json_schema, generate_validation_report
+from coreason_validator.validator import ValidationResult
 
 
 def test_export_json_schema_creates_files(tmp_path: Path) -> None:
@@ -163,3 +164,10 @@ def test_export_failure_in_model_generation(tmp_path: Path, monkeypatch: pytest.
 
     with pytest.raises(ValueError, match="Simulated schema generation failure"):
         export_json_schema(output_dir)
+
+
+def test_generate_validation_report() -> None:
+    result = ValidationResult(is_valid=True, errors=[], validation_metadata={"validated_by": "me"})
+    report = generate_validation_report(result)
+    assert report["is_valid"] is True
+    assert report["validation_metadata"]["validated_by"] == "me"
