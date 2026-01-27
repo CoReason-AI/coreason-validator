@@ -10,11 +10,30 @@
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
+from typing import Optional
 
-from coreason_validator.utils.exporter import export_json_schema
+from coreason_identity.models import UserContext
+
+from coreason_validator.utils.exporter import export_json_schema, generate_validation_report
+from coreason_validator.utils.logger import logger
 from coreason_validator.validator import validate_file
+
+
+def get_cli_context() -> Optional[UserContext]:
+    """
+    Mints a UserContext from environment variables.
+    """
+    user_id = os.getenv("COREASON_USER_ID")
+    email = os.getenv("COREASON_EMAIL")
+
+    if user_id and email:
+        return UserContext(user_id=user_id, email=email)
+
+    logger.warning("No identity found. Validation report will be unattributed.")
+    return None
 
 
 def handle_check(args: argparse.Namespace) -> int:
@@ -30,18 +49,25 @@ def handle_check(args: argparse.Namespace) -> int:
             print(f"Error: File not found: {path}")
         return 1
 
-    result = validate_file(path)
+    ctx = get_cli_context()
+    result = validate_file(path, user_context=ctx)
+    report = generate_validation_report(result)
 
     if args.json:
-        # Dump the result model to JSON.
-        print(result.model_dump_json())
+        # Dump the report to JSON.
+        print(json.dumps(report))
         return 0 if result.is_valid else 1
 
     if result.is_valid:
         print(f"✅ Validation successful: {path}")
+        meta = result.validation_metadata
+        print(f"   Validated by: {meta.get('validated_by')}")
+        print(f"   Context: {meta.get('signature_context')}")
         return 0
     else:
         print(f"❌ Validation failed: {path}")
+        meta = result.validation_metadata
+        print(f"   Validated by: {meta.get('validated_by')}")
         for error in result.errors:
             msg = error.get("msg", "Unknown error")
             loc = error.get("loc", [])

@@ -8,6 +8,7 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
+import os
 import sys
 from pathlib import Path
 from typing import Generator
@@ -65,7 +66,34 @@ def test_check_valid_file(mock_validator: MagicMock, capsys: pytest.CaptureFixtu
 
     captured = capsys.readouterr()
     assert "✅ Validation successful" in captured.out
-    mock_validator.assert_called_once_with(f)
+    mock_validator.assert_called_once_with(f, user_context=None)
+
+
+def test_check_authenticated(mock_validator: MagicMock, capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
+    """Test 'check' subcommand with identity env vars."""
+    f = tmp_path / "agent.yaml"
+    f.touch()
+
+    mock_validator.return_value = ValidationResult(
+        is_valid=True,
+        validation_metadata={"validated_by": "user_id (test@example.com)", "signature_context": "Auth"},
+    )
+
+    with patch.dict(os.environ, {"COREASON_USER_ID": "user_id", "COREASON_EMAIL": "test@example.com"}):
+        with patch.object(sys, "argv", ["coreason-val", "check", str(f)]):
+            with pytest.raises(SystemExit) as excinfo:
+                main()
+            assert excinfo.value.code == 0
+
+    captured = capsys.readouterr()
+    assert "✅ Validation successful" in captured.out
+    assert "Validated by: user_id (test@example.com)" in captured.out
+
+    # Check that user_context was passed to validate_file
+    args, kwargs = mock_validator.call_args
+    assert kwargs["user_context"] is not None
+    assert kwargs["user_context"].user_id == "user_id"
+    assert kwargs["user_context"].email == "test@example.com"
 
 
 def test_check_invalid_file(mock_validator: MagicMock, capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:

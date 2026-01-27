@@ -68,7 +68,7 @@ def test_check_unicode_filename(mock_validator: MagicMock, capsys: pytest.Captur
 
     captured = capsys.readouterr()
     assert f"✅ Validation successful: {f}" in captured.out
-    mock_validator.assert_called_once_with(f)
+    mock_validator.assert_called_once_with(f, user_context=None)
 
 
 def test_check_deeply_nested_error(
