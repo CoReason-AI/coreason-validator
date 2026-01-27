@@ -163,3 +163,16 @@ def test_export_failure_in_model_generation(tmp_path: Path, monkeypatch: pytest.
 
     with pytest.raises(ValueError, match="Simulated schema generation failure"):
         export_json_schema(output_dir)
+
+from coreason_validator.validator import ValidationResult
+from coreason_validator.utils.exporter import generate_validation_report
+
+def test_generate_validation_report() -> None:
+    result = ValidationResult(
+        is_valid=True,
+        errors=[],
+        validation_metadata={"validated_by": "me"}
+    )
+    report = generate_validation_report(result)
+    assert report["is_valid"] is True
+    assert report["validation_metadata"]["validated_by"] == "me"

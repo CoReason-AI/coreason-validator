@@ -9,6 +9,7 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
@@ -17,6 +18,7 @@ import yaml
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from coreason_identity.models import UserContext
 from coreason_validator.registry import registry
 from coreason_validator.schemas.base import CoReasonBaseModel
 from coreason_validator.schemas.message import Message
@@ -39,6 +41,7 @@ class ValidationResult(BaseModel):
     # Using Any is safest for now to ensure model_dump_json works.
     model: Optional[Any] = None
     errors: List[Dict[str, Any]] = Field(default_factory=list)
+    validation_metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 def sanitize_inputs(data: Any) -> Any:
@@ -62,7 +65,9 @@ def sanitize_inputs(data: Any) -> Any:
     return data
 
 
-def validate_object(data: Dict[str, Any], schema_type: Union[Type[T], str]) -> T:
+def validate_object(
+    data: Dict[str, Any], schema_type: Union[Type[T], str], user_context: Optional[UserContext] = None
+) -> T:
     """
     Validates a dictionary against a Pydantic schema class or a string alias.
 
@@ -74,6 +79,7 @@ def validate_object(data: Dict[str, Any], schema_type: Union[Type[T], str]) -> T
     Args:
         data: The input dictionary.
         schema_type: The Pydantic model class (must inherit from CoReasonBaseModel) or a string alias.
+        user_context: Optional user identity context.
 
     Returns:
         An instance of the schema class.
@@ -175,7 +181,9 @@ def check_compliance(instance: Dict[str, Any], schema: Dict[str, Any]) -> None:
 
 
 def validate_file(
-    path: Union[str, Path], schema_type: Optional[Union[Type[CoReasonBaseModel], str]] = None
+    path: Union[str, Path],
+    schema_type: Optional[Union[Type[CoReasonBaseModel], str]] = None,
+    user_context: Optional[UserContext] = None,
 ) -> ValidationResult:
     """
     Reads a file (JSON/YAML), detects the schema type (if not provided), and validates it.
@@ -183,16 +191,31 @@ def validate_file(
     Args:
         path: Path to the file.
         schema_type: The Pydantic model class, or a string alias ('agent', 'topology', 'bec', 'tool'), or None to infer.
+        user_context: Optional user identity context.
 
     Returns:
         ValidationResult object containing status, the model (if valid), and structured errors.
     """
+    # Prepare metadata
+    metadata = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    if user_context:
+        metadata["validated_by"] = f"{user_context.user_id} ({user_context.email})"
+        metadata["signature_context"] = "Authenticated via CoReason Identity"
+    else:
+        metadata["validated_by"] = "SYSTEM_AUTOMATION"
+        metadata["signature_context"] = "Unattributed"
+
     path = Path(path)
     logger.info(f"Validating file: {path}")
 
     if not path.exists():
         logger.error(f"File not found: {path}")
-        return ValidationResult(is_valid=False, errors=[{"msg": f"File not found: {path}"}])
+        metadata["validation_status"] = "FAIL"
+        return ValidationResult(
+            is_valid=False, errors=[{"msg": f"File not found: {path}"}], validation_metadata=metadata
+        )
 
     # 1. Read & Parse
     content: Any = None
@@ -212,19 +235,32 @@ def validate_file(
                 try:
                     content = yaml.safe_load(text)
                 except yaml.YAMLError:
+                    metadata["validation_status"] = "FAIL"
                     return ValidationResult(
                         is_valid=False,
                         errors=[{"msg": f"Unsupported file extension '{suffix}' and failed to auto-parse."}],
+                        validation_metadata=metadata,
                     )
     except (json.JSONDecodeError, yaml.YAMLError) as e:
         logger.error(f"Parse error in {path}: {e}")
-        return ValidationResult(is_valid=False, errors=[{"msg": f"Parse error: {str(e)}"}])
+        metadata["validation_status"] = "FAIL"
+        return ValidationResult(
+            is_valid=False, errors=[{"msg": f"Parse error: {str(e)}"}], validation_metadata=metadata
+        )
     except Exception as e:
         logger.error(f"Error reading file {path}: {e}")
-        return ValidationResult(is_valid=False, errors=[{"msg": f"Error reading file: {str(e)}"}])
+        metadata["validation_status"] = "FAIL"
+        return ValidationResult(
+            is_valid=False, errors=[{"msg": f"Error reading file: {str(e)}"}], validation_metadata=metadata
+        )
 
     if not isinstance(content, dict):
-        return ValidationResult(is_valid=False, errors=[{"msg": "File content must be a dictionary object."}])
+        metadata["validation_status"] = "FAIL"
+        return ValidationResult(
+            is_valid=False,
+            errors=[{"msg": "File content must be a dictionary object."}],
+            validation_metadata=metadata,
+        )
 
     # 2. Resolve Schema
     schema_class: Optional[Type[CoReasonBaseModel]] = None
@@ -233,7 +269,12 @@ def validate_file(
         # Inference Logic using Registry
         schema_class = registry.infer_schema(content)
         if not schema_class:
-            return ValidationResult(is_valid=False, errors=[{"msg": "Could not infer schema type from content."}])
+            metadata["validation_status"] = "FAIL"
+            return ValidationResult(
+                is_valid=False,
+                errors=[{"msg": "Could not infer schema type from content."}],
+                validation_metadata=metadata,
+            )
 
     elif isinstance(schema_type, (str, type)):
         # Delegate resolution to validate_object's logic, but we need the class for ValidationResult if possible
@@ -249,20 +290,33 @@ def validate_file(
         target_schema = schema_class if schema_class else schema_type
         # We need to ensure target_schema is not None.
 
-        instance = validate_object(content, target_schema)  # type: ignore
-        return ValidationResult(is_valid=True, model=instance)
+        instance = validate_object(content, target_schema, user_context=user_context)  # type: ignore
+        metadata["validation_status"] = "PASS"
+        return ValidationResult(is_valid=True, model=instance, validation_metadata=metadata)
     except ValidationError as e:
         # Returns the list of error dicts provided by Pydantic
         # Must catch ValidationError BEFORE ValueError because ValidationError inherits from ValueError in Pydantic V2
-        return ValidationResult(is_valid=False, errors=[dict(err) for err in e.errors()])
+        metadata["validation_status"] = "FAIL"
+        return ValidationResult(
+            is_valid=False, errors=[dict(err) for err in e.errors()], validation_metadata=metadata
+        )
     except ValueError as e:
         # validate_object raises ValueError for invalid alias
-        return ValidationResult(is_valid=False, errors=[{"msg": str(e)}])
+        metadata["validation_status"] = "FAIL"
+        return ValidationResult(
+            is_valid=False, errors=[{"msg": str(e)}], validation_metadata=metadata
+        )
     except RecursionError:
         logger.error("Recursion error during validation")
+        metadata["validation_status"] = "FAIL"
         return ValidationResult(
-            is_valid=False, errors=[{"msg": "Recursion limit exceeded (possible cyclic reference)"}]
+            is_valid=False,
+            errors=[{"msg": "Recursion limit exceeded (possible cyclic reference)"}],
+            validation_metadata=metadata,
         )
     except Exception as e:
         logger.error(f"Unexpected error during validation: {e}")
-        return ValidationResult(is_valid=False, errors=[{"msg": f"Validation error: {str(e)}"}])
+        metadata["validation_status"] = "FAIL"
+        return ValidationResult(
+            is_valid=False, errors=[{"msg": f"Validation error: {str(e)}"}], validation_metadata=metadata
+        )
