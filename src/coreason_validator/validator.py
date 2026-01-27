@@ -15,10 +15,10 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 import jsonschema
 import yaml
+from coreason_identity.models import UserContext
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from coreason_identity.models import UserContext
 from coreason_validator.registry import registry
 from coreason_validator.schemas.base import CoReasonBaseModel
 from coreason_validator.schemas.message import Message
@@ -297,15 +297,11 @@ def validate_file(
         # Returns the list of error dicts provided by Pydantic
         # Must catch ValidationError BEFORE ValueError because ValidationError inherits from ValueError in Pydantic V2
         metadata["validation_status"] = "FAIL"
-        return ValidationResult(
-            is_valid=False, errors=[dict(err) for err in e.errors()], validation_metadata=metadata
-        )
+        return ValidationResult(is_valid=False, errors=[dict(err) for err in e.errors()], validation_metadata=metadata)
     except ValueError as e:
         # validate_object raises ValueError for invalid alias
         metadata["validation_status"] = "FAIL"
-        return ValidationResult(
-            is_valid=False, errors=[{"msg": str(e)}], validation_metadata=metadata
-        )
+        return ValidationResult(is_valid=False, errors=[{"msg": str(e)}], validation_metadata=metadata)
     except RecursionError:
         logger.error("Recursion error during validation")
         metadata["validation_status"] = "FAIL"
