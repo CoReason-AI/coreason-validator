@@ -1,5 +1,6 @@
-from pathlib import Path
 import json
+from pathlib import Path
+
 from coreason_identity.models import UserContext
 
 from coreason_validator.validator import validate_file
@@ -13,12 +14,12 @@ def test_validation_with_user_context(tmp_path: Path) -> None:
             "version": "1.0.0",
             "name": "test-agent",
             "author": "tester",
-            "created_at": "2025-01-01T00:00:00Z"
+            "created_at": "2025-01-01T00:00:00Z",
         },
         "interface": {"inputs": {}, "outputs": {}},
         "topology": {"steps": [{"id": "s1"}], "model_config": {"model": "gpt-4", "temperature": 0.7}},
         "dependencies": {},
-        "integrity_hash": "a"*64
+        "integrity_hash": "a" * 64,
     }
     p = tmp_path / "agent.json"
     p.write_text(json.dumps(data))
@@ -42,12 +43,12 @@ def test_validation_without_user_context(tmp_path: Path) -> None:
             "version": "1.0.0",
             "name": "test-agent",
             "author": "tester",
-            "created_at": "2025-01-01T00:00:00Z"
+            "created_at": "2025-01-01T00:00:00Z",
         },
         "interface": {"inputs": {}, "outputs": {}},
         "topology": {"steps": [{"id": "s1"}], "model_config": {"model": "gpt-4", "temperature": 0.7}},
         "dependencies": {},
-        "integrity_hash": "a"*64
+        "integrity_hash": "a" * 64,
     }
     p = tmp_path / "agent.json"
     p.write_text(json.dumps(data))

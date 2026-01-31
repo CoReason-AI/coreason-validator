@@ -8,7 +8,6 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
-import pytest
 from coreason_manifest.definitions.agent import AgentDefinition
 
 from coreason_validator.validator import sanitize_inputs, validate_object
@@ -66,5 +65,3 @@ def test_validate_object_success() -> None:
     assert isinstance(agent, AgentDefinition)
     assert agent.metadata.name == "my-agent"
     assert agent.topology.llm_config.model == "gpt-4-turbo"
-
-

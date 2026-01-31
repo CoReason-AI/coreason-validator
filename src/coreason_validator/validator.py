@@ -113,8 +113,6 @@ def validate_object(
         raise
 
 
-
-
 def check_compliance(instance: Dict[str, Any], schema: Dict[str, Any]) -> None:
     """
     Validates a JSON object against a JSON schema.

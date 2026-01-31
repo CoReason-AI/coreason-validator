@@ -217,7 +217,7 @@ def test_validate_file_invalid_schema_arg(temp_dir: Path) -> None:
     file_path = temp_dir / "agent.json"
     file_path.write_text("{}")
 
-    result = validate_file(file_path, schema_type=123)
+    result = validate_file(file_path, schema_type=123)  # type: ignore[arg-type]
     assert not result.is_valid
     assert "Invalid schema_type" in str(result.errors)
 
