@@ -10,14 +10,13 @@
 
 from typing import Any, Callable, Dict, Optional, Type
 
-from pydantic import BaseModel
-
 # Import STRICT definitions from the Kernel
 from coreason_manifest.definitions.agent import AgentDefinition
 from coreason_manifest.definitions.audit import AuditLog
 from coreason_manifest.definitions.message import Message, ToolCallRequestPart
 from coreason_manifest.definitions.topology import GraphTopology
 from coreason_manifest.recipes import RecipeManifest
+from pydantic import BaseModel
 
 
 class SchemaRegistry:

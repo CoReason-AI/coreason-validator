@@ -13,10 +13,10 @@ from pathlib import Path
 from typing import Any, Iterator
 
 import pytest
+from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
 from pydantic import ValidationError
 
-from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
-from coreason_validator.validator import sanitize_inputs, validate_file, validate_object, validate_tool_call
+from coreason_validator.validator import sanitize_inputs, validate_file, validate_object
 
 
 @pytest.fixture

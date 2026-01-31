@@ -8,20 +8,21 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 import pytest
-from pydantic import ValidationError
-
 from coreason_manifest.definitions.agent import AgentDefinition
 from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
+from pydantic import ValidationError
+
 from coreason_validator.validator import sanitize_inputs, validate_object, validate_tool_call
 
 VALID_HASH = "a" * 64
 VALID_UUID = "123e4567-e89b-12d3-a456-426614174000"
 
-def get_valid_agent_data():
+
+def get_valid_agent_data() -> dict[str, Any]:
     return {
         "metadata": {
             "id": VALID_UUID,
@@ -43,6 +44,7 @@ def get_valid_agent_data():
         "dependencies": {},
         "integrity_hash": VALID_HASH,
     }
+
 
 def test_sanitize_inputs() -> None:
     """

@@ -10,8 +10,9 @@
 
 from typing import Literal
 
-from coreason_validator.registry import SchemaRegistry, registry
 from pydantic import BaseModel as CoReasonBaseModel
+
+from coreason_validator.registry import SchemaRegistry, registry
 from coreason_validator.validator import validate_object
 
 

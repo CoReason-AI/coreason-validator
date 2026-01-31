@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
 from coreason_manifest.definitions.agent import AgentDefinition
+
 from coreason_validator.utils.exporter import export_json_schema, generate_validation_report
 from coreason_validator.validator import ValidationResult
 

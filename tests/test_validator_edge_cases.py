@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Any
+
 # Copyright (c) 2025 CoReason, Inc.
 #
 # This software is proprietary and dual-licensed.
@@ -7,19 +10,17 @@
 # Commercial use beyond a 30-day trial requires a separate license.
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
-
 import pytest
-from pydantic import ValidationError
-from datetime import datetime
-
 from coreason_manifest.definitions.agent import AgentDefinition
-from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
+from pydantic import ValidationError
+
 from coreason_validator.validator import sanitize_inputs, validate_object
 
 VALID_HASH = "a" * 64
 VALID_UUID = "123e4567-e89b-12d3-a456-426614174000"
 
-def get_valid_agent_data():
+
+def get_valid_agent_data() -> dict[str, Any]:
     return {
         "metadata": {
             "id": VALID_UUID,
@@ -41,6 +42,7 @@ def get_valid_agent_data():
         "dependencies": {},
         "integrity_hash": VALID_HASH,
     }
+
 
 def test_sanitize_inputs_tuples_sets() -> None:
     """Test sanitization of tuples and sets."""

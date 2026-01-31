@@ -7,21 +7,20 @@
 # Commercial use beyond a 30-day trial requires a separate license.
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
-
 import json
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 from unittest.mock import patch
 
 import pytest
 import yaml
-
 from coreason_manifest.definitions.agent import AgentDefinition
-from coreason_manifest.recipes import RecipeManifest
 from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
 from coreason_manifest.definitions.topology import GraphTopology
+from coreason_manifest.recipes import RecipeManifest
+
 from coreason_validator.validator import validate_file
 
 
@@ -30,10 +29,12 @@ def temp_dir() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as d:
         yield Path(d)
 
+
 VALID_HASH = "a" * 64
 VALID_UUID = "123e4567-e89b-12d3-a456-426614174000"
 
-def get_valid_agent_data():
+
+def get_valid_agent_data() -> dict[str, Any]:
     return {
         "metadata": {
             "id": VALID_UUID,
@@ -55,6 +56,7 @@ def get_valid_agent_data():
         "dependencies": {},
         "integrity_hash": VALID_HASH,
     }
+
 
 def test_validate_file_json_success(temp_dir: Path) -> None:
     """Test validating a valid JSON file."""
@@ -104,10 +106,7 @@ def test_validate_file_schema_inference(temp_dir: Path) -> None:
         "interface": {"inputs": {}, "outputs": {}},
         "state": {"schema": {}, "persistence": "ephemeral"},
         "parameters": {},
-        "topology": {
-            "nodes": [],
-            "edges": []
-        }
+        "topology": {"nodes": [], "edges": []},
     }
     recipe_path = temp_dir / "recipe.json"
     recipe_path.write_text(json.dumps(recipe_data))
@@ -122,11 +121,7 @@ def test_validate_file_schema_inference(temp_dir: Path) -> None:
 def test_validate_file_inference_more_types(temp_dir: Path) -> None:
     """Test inference for Topology and ToolCall."""
     # Topology (nodes + edges + state_schema)
-    topo_data = {
-        "nodes": [],
-        "edges": [],
-        "state_schema": {"data_schema": {}, "persistence": "memory"}
-    }
+    topo_data = {"nodes": [], "edges": [], "state_schema": {"data_schema": {}, "persistence": "memory"}}
     topo_path = temp_dir / "topo.json"
     topo_path.write_text(json.dumps(topo_data))
 
@@ -135,11 +130,7 @@ def test_validate_file_inference_more_types(temp_dir: Path) -> None:
     assert isinstance(res_topo.model, GraphTopology)
 
     # ToolCall (name + arguments)
-    tool_data = {
-        "type": "tool_call",
-        "name": "search",
-        "arguments": {"q": "foo"}
-    }
+    tool_data = {"type": "tool_call", "name": "search", "arguments": {"q": "foo"}}
     tool_path = temp_dir / "tool.json"
     tool_path.write_text(json.dumps(tool_data))
 

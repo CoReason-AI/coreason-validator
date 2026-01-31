@@ -55,13 +55,7 @@ def test_message_cyclic_reference() -> None:
     # Use a tool call part which allows Any in arguments
     payload = {
         "role": "assistant",
-        "parts": [
-            {
-                "type": "tool_call",
-                "name": "foo",
-                "arguments": cyclic_dict
-            }
-        ],
+        "parts": [{"type": "tool_call", "name": "foo", "arguments": cyclic_dict}],
     }
 
     with pytest.raises(RecursionError):

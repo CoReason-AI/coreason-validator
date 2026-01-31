@@ -16,7 +16,8 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 import jsonschema
 import yaml
 from coreason_identity.models import UserContext
-from coreason_manifest.definitions.message import Message, ToolCallRequestPart as ToolCall
+from coreason_manifest.definitions.message import Message
+from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 

@@ -13,15 +13,15 @@ import tempfile
 from pathlib import Path
 from typing import Iterator
 from unittest.mock import patch
-from datetime import datetime
 
 import pytest
-
 from coreason_manifest.definitions.agent import AgentDefinition
+
 from coreason_validator.validator import validate_file
 
 VALID_HASH = "a" * 64
 VALID_UUID = "123e4567-e89b-12d3-a456-426614174000"
+
 
 @pytest.fixture
 def temp_dir() -> Iterator[Path]:
@@ -65,11 +65,15 @@ def test_ambiguous_inference(temp_dir: Path) -> None:
     data = {
         # Agent keys
         "integrity_hash": VALID_HASH,
-        "config": {"nodes": [], "edges": [], "entry_point": "node1", "model_config": {"model": "m", "temperature": 0.0}},
+        "config": {
+            "nodes": [],
+            "edges": [],
+            "entry_point": "node1",
+            "model_config": {"model": "m", "temperature": 0.0},
+        },
         # Recipe keys
         "interface": {"inputs": {}, "outputs": {}},
         "topology": {"nodes": [], "edges": [], "state_schema": {"data_schema": {}, "persistence": "memory"}},
-
         # Missing other required fields for Agent (metadata) or Recipe (id, version, state, parameters)
         # to ensure we fail validation, but we want to know WHICH schema it picked.
         "extra_field_for_agent": "should fail if agent",
@@ -80,7 +84,9 @@ def test_ambiguous_inference(temp_dir: Path) -> None:
     # Current registry order puts 'agent' before 'recipe'.
     # So it should infer AgentDefinition.
     # AgentDefinition has extra="forbid".
-    # It should fail because of 'interface' (extra), 'topology' (Wait, AgentDefinition DOES NOT have 'topology' in new schema? It has 'config' which contains 'nodes'/'edges').
+    # It should fail because of 'interface' (extra), 'topology'
+    # (Wait, AgentDefinition DOES NOT have 'topology' in new schema?
+    # It has 'config' which contains 'nodes'/'edges').
     # AgentDefinition has 'interface' too!
     # AgentDefinition structure: metadata, interface, config, dependencies, policy, observability, integrity_hash.
 

@@ -7,11 +7,11 @@
 # Commercial use beyond a 30-day trial requires a separate license.
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
-
 import json
-from pathlib import Path
-from unittest.mock import patch
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -20,7 +20,8 @@ from coreason_validator.cli import main
 VALID_HASH = "a" * 64
 VALID_UUID = "123e4567-e89b-12d3-a456-426614174000"
 
-def get_valid_agent_data():
+
+def get_valid_agent_data() -> dict[str, Any]:
     return {
         "metadata": {
             "id": VALID_UUID,

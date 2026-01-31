@@ -9,9 +9,9 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from pydantic import ValidationError, BaseModel
-
 from coreason_manifest.definitions.message import Message
+from pydantic import BaseModel, ValidationError
+
 from coreason_validator.validator import validate_message, validate_object
 
 
