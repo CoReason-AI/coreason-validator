@@ -16,14 +16,15 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 import jsonschema
 import yaml
 from coreason_identity.models import UserContext
+from coreason_manifest.definitions.message import Message, ToolCallRequestPart as ToolCall
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from coreason_validator.registry import registry
-from coreason_validator.schemas.base import CoReasonBaseModel
-from coreason_validator.schemas.message import Message
-from coreason_validator.schemas.tool import ToolCall
 from coreason_validator.utils.logger import logger
+
+# Alias for backward compatibility and type checking
+CoReasonBaseModel = BaseModel
 
 T = TypeVar("T", bound=CoReasonBaseModel)
 

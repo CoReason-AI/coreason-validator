@@ -8,7 +8,6 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
-from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 import pytest
@@ -17,26 +16,18 @@ from pydantic import ValidationError
 from coreason_validator.validator import validate_message
 
 
-def test_message_whitespace_sanitization_failure() -> None:
+def test_message_whitespace_sanitization() -> None:
     """
-    Test that a field containing only whitespace is sanitized to an empty string
-    and subsequently fails the min_length=1 validation.
+    Test that a field containing only whitespace is sanitized to an empty string.
     """
     payload = {
-        "id": "   ",  # Becomes ""
-        "sender": "agent-a",
-        "receiver": "agent-b",
-        "timestamp": datetime.now(),
-        "type": "text",
-        "content": {},
+        "role": "user",
+        "parts": [{"type": "text", "content": "   "}],
+        "name": "   ",  # Becomes ""
     }
-    with pytest.raises(ValidationError) as excinfo:
-        validate_message(payload)
-
-    # Check that the error is about 'id' being too short (or empty)
-    errors = excinfo.value.errors()
-    assert errors[0]["loc"] == ("id",)
-    assert "least 1 character" in errors[0]["msg"]
+    msg = validate_message(payload)
+    assert msg.parts[0].content == ""
+    assert msg.name == ""
 
 
 def test_message_null_byte_stripping() -> None:
@@ -44,34 +35,13 @@ def test_message_null_byte_stripping() -> None:
     Test that null bytes are stripped from strings.
     """
     payload = {
-        "id": "msg\0-123",  # Becomes "msg-123"
-        "sender": "agent\0-a",  # Becomes "agent-a"
-        "receiver": "agent-b",
-        "timestamp": datetime.now(),
-        "type": "text",
-        "content": {"key": "val\0ue"},  # Becomes "value"
+        "role": "user",
+        "name": "name\0-123",  # Becomes "name-123"
+        "parts": [{"type": "text", "content": "val\0ue"}],
     }
     msg = validate_message(payload)
-    assert msg.id == "msg-123"
-    assert msg.sender == "agent-a"
-    assert msg.content["key"] == "value"
-
-
-def test_message_complex_nested_content() -> None:
-    """
-    Test a message with deeply nested content structure.
-    """
-    nested_data = {"level1": {"level2": {"level3": {"data": [1, 2, 3]}}}}
-    payload = {
-        "id": "msg-deep",
-        "sender": "agent-a",
-        "receiver": "agent-b",
-        "timestamp": datetime.now(),
-        "type": "data",
-        "content": nested_data,
-    }
-    msg = validate_message(payload)
-    assert msg.content["level1"]["level2"]["level3"]["data"] == [1, 2, 3]
+    assert msg.name == "name-123"
+    assert msg.parts[0].content == "value"
 
 
 def test_message_cyclic_reference() -> None:
@@ -82,42 +52,20 @@ def test_message_cyclic_reference() -> None:
     cyclic_dict: Dict[str, Any] = {}
     cyclic_dict["self"] = cyclic_dict
 
+    # Use a tool call part which allows Any in arguments
     payload = {
-        "id": "msg-cycle",
-        "sender": "agent-a",
-        "receiver": "agent-b",
-        "timestamp": datetime.now(),
-        "type": "cycle",
-        "content": cyclic_dict,
+        "role": "assistant",
+        "parts": [
+            {
+                "type": "tool_call",
+                "name": "foo",
+                "arguments": cyclic_dict
+            }
+        ],
     }
 
     with pytest.raises(RecursionError):
         validate_message(payload)
-
-
-def test_message_timestamp_formats() -> None:
-    """
-    Test various timestamp formats (strings, timezones).
-    """
-    # ISO String
-    ts_str = "2025-01-01T12:00:00Z"
-    payload = {
-        "id": "msg-ts-1",
-        "sender": "a",
-        "receiver": "b",
-        "timestamp": ts_str,
-        "type": "t",
-        "content": {},
-    }
-    msg = validate_message(payload)
-    assert msg.timestamp.year == 2025
-    assert msg.timestamp.month == 1
-
-    # Future timestamp (should pass as schema doesn't restrict it)
-    future_ts = datetime.now(timezone.utc) + timedelta(days=3650)
-    payload["timestamp"] = future_ts  # type: ignore[assignment]
-    msg_future = validate_message(payload)
-    assert msg_future.timestamp == future_ts
 
 
 def test_message_unicode_emoji() -> None:
@@ -125,18 +73,13 @@ def test_message_unicode_emoji() -> None:
     Test valid handling of Unicode characters and Emojis.
     """
     payload = {
-        "id": "msg-🚀",
-        "sender": "agent-über",
-        "receiver": "agent-こんにちは",
-        "timestamp": datetime.now(),
-        "type": "text",
-        "content": {"message": "I ❤️ coding"},
+        "role": "user",
+        "name": "agent-🚀",
+        "parts": [{"type": "text", "content": "I ❤️ coding"}],
     }
     msg = validate_message(payload)
-    assert msg.id == "msg-🚀"
-    assert msg.sender == "agent-über"
-    assert msg.receiver == "agent-こんにちは"
-    assert msg.content["message"] == "I ❤️ coding"
+    assert msg.name == "agent-🚀"
+    assert msg.parts[0].content == "I ❤️ coding"
 
 
 def test_message_strict_type_coercion() -> None:
@@ -146,12 +89,9 @@ def test_message_strict_type_coercion() -> None:
     We document that int provided for string field raises ValidationError.
     """
     payload = {
-        "id": 12345,  # Int provided for String field
-        "sender": "a",
-        "receiver": "b",
-        "timestamp": datetime.now(),
-        "type": "t",
-        "content": {},
+        "role": "user",
+        "name": 12345,  # Int provided for String field
+        "parts": [{"type": "text", "content": "hello"}],
     }
     with pytest.raises(ValidationError) as excinfo:
         validate_message(payload)

@@ -9,14 +9,40 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 from typing import Any
+from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
 
-from coreason_validator.schemas.agent import AgentManifest
-from coreason_validator.schemas.tool import ToolCall
+from coreason_manifest.definitions.agent import AgentDefinition
+from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
 from coreason_validator.validator import sanitize_inputs, validate_object, validate_tool_call
 
+VALID_HASH = "a" * 64
+VALID_UUID = "123e4567-e89b-12d3-a456-426614174000"
+
+def get_valid_agent_data():
+    return {
+        "metadata": {
+            "id": VALID_UUID,
+            "version": "1.0.0",
+            "name": "test-agent",
+            "author": "tester",
+            "created_at": datetime.utcnow().isoformat(),
+        },
+        "interface": {
+            "inputs": {"type": "object"},
+            "outputs": {"type": "object"},
+        },
+        "config": {
+            "nodes": [],
+            "edges": [],
+            "entry_point": "node1",
+            "model_config": {"model": "gpt-4", "temperature": 0.7},
+        },
+        "dependencies": {},
+        "integrity_hash": VALID_HASH,
+    }
 
 def test_sanitize_inputs() -> None:
     """
@@ -31,11 +57,7 @@ def test_sanitize_inputs() -> None:
     clean = sanitize_inputs(data)
     assert clean["name"] == "Alice"
     assert clean["bio"] == "HelloWorld"
-    assert clean["meta"][" key "] == "value"  # Keys are not sanitized in this implementation, only values?
-    # Wait, implementation:
-    # if isinstance(data, dict): return {k: sanitize_inputs(v) for k, v in data.items()}
-    # So keys are NOT sanitized. Values are.
-
+    assert clean["meta"][" key "] == "value"  # Keys are not sanitized
     assert clean["tags"] == ["tag1", "tag2"]
 
 
@@ -43,12 +65,12 @@ def test_validate_object_with_alias() -> None:
     """
     Test validate_object using string aliases.
     """
-    data = {"tool_name": "sql_query", "arguments": {"query": "SELECT * FROM users"}}
+    data = {"type": "tool_call", "name": "sql_query", "arguments": {"query": "SELECT * FROM users"}}
 
     # Test with valid alias
     tool: ToolCall = validate_object(data, "tool")
     assert isinstance(tool, ToolCall)
-    assert tool.tool_name == "sql_query"
+    assert tool.name == "sql_query"
 
     # Test with case-insensitive alias
     tool2: ToolCall = validate_object(data, "TOOL")
@@ -72,7 +94,7 @@ def test_validate_object_with_class() -> None:
     """
     Test validate_object using Class.
     """
-    data = {"tool_name": "sql_query", "arguments": {"query": "SELECT * FROM users"}}
+    data = {"type": "tool_call", "name": "sql_query", "arguments": {"query": "SELECT * FROM users"}}
     tool = validate_object(data, ToolCall)
     assert isinstance(tool, ToolCall)
 
@@ -81,10 +103,10 @@ def test_validate_tool_call_wrapper() -> None:
     """
     Test the specific validate_tool_call wrapper.
     """
-    data = {"tool_name": "weather", "arguments": {"city": "Paris"}}
+    data = {"type": "tool_call", "name": "weather", "arguments": {"city": "Paris"}}
     tool = validate_tool_call(data)
     assert isinstance(tool, ToolCall)
-    assert tool.tool_name == "weather"
+    assert tool.name == "weather"
     assert tool.arguments["city"] == "Paris"
 
 
@@ -93,7 +115,8 @@ def test_validate_tool_call_failure() -> None:
     Test failure in validate_tool_call.
     """
     data = {
-        "tool_name": "weather",
+        "type": "tool_call",
+        "name": "weather",
         # Missing arguments
     }
     with pytest.raises(ValidationError):
@@ -104,13 +127,6 @@ def test_validate_agent_alias() -> None:
     """
     Test validate_object with 'agent' alias.
     """
-    data = {
-        "schema_version": "1.0",
-        "name": "my-agent",
-        "version": "1.0.0",
-        "model_config": "gpt-4-turbo",
-        "max_cost_limit": 5.0,
-        "topology": "t.json",
-    }
-    agent: AgentManifest = validate_object(data, "agent")
-    assert isinstance(agent, AgentManifest)
+    data = get_valid_agent_data()
+    agent: AgentDefinition = validate_object(data, "agent")
+    assert isinstance(agent, AgentDefinition)

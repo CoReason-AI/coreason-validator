@@ -6,9 +6,9 @@ from coreason_validator.validator import validate_file
 
 
 def test_validation_with_user_context(tmp_path: Path) -> None:
-    # Create a valid tool call file
+    # Create a valid tool call file (Kernel schema: ToolCallRequestPart)
     p = tmp_path / "tool.json"
-    p.write_text('{"tool_name": "my_tool", "arguments": {"x": 1}}')
+    p.write_text('{"type": "tool_call", "name": "my_tool", "arguments": {"x": 1}}')
 
     ctx = UserContext(user_id="auth0|123", email="test@coreason.ai", groups=["admin"])
 
@@ -25,7 +25,7 @@ def test_validation_with_user_context(tmp_path: Path) -> None:
 
 def test_validation_without_user_context(tmp_path: Path) -> None:
     p = tmp_path / "tool.json"
-    p.write_text('{"tool_name": "my_tool", "arguments": {"x": 1}}')
+    p.write_text('{"type": "tool_call", "name": "my_tool", "arguments": {"x": 1}}')
 
     result = validate_file(p, schema_type="tool", user_context=None)
 
