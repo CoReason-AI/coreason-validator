@@ -10,12 +10,13 @@
 
 from typing import Any, Callable, Dict, Optional, Type
 
-from coreason_validator.schemas.agent import AgentManifest
-from coreason_validator.schemas.base import CoReasonBaseModel
-from coreason_validator.schemas.bec import BECManifest
-from coreason_validator.schemas.message import Message
-from coreason_validator.schemas.tool import ToolCall
-from coreason_validator.schemas.topology import TopologyGraph
+from pydantic import BaseModel
+
+from coreason_manifest.definitions.agent import AgentDefinition
+from coreason_manifest.definitions.topology import Topology
+from coreason_manifest.recipes import RecipeManifest
+
+from coreason_validator.models import Message, ToolCall
 
 
 class SchemaRegistry:
@@ -25,13 +26,13 @@ class SchemaRegistry:
     """
 
     def __init__(self) -> None:
-        self._alias_map: Dict[str, Type[CoReasonBaseModel]] = {}
-        self._detectors: Dict[Type[CoReasonBaseModel], Callable[[Dict[str, Any]], bool]] = {}
+        self._alias_map: Dict[str, Type[BaseModel]] = {}
+        self._detectors: Dict[Type[BaseModel], Callable[[Dict[str, Any]], bool]] = {}
 
     def register(
         self,
         alias: str,
-        schema_cls: Type[CoReasonBaseModel],
+        schema_cls: Type[BaseModel],
         detector: Optional[Callable[[Dict[str, Any]], bool]] = None,
     ) -> None:
         """
@@ -46,7 +47,7 @@ class SchemaRegistry:
         if detector:
             self._detectors[schema_cls] = detector
 
-    def get_schema(self, alias: str) -> Optional[Type[CoReasonBaseModel]]:
+    def get_schema(self, alias: str) -> Optional[Type[BaseModel]]:
         """
         Retrieves a schema class by its alias.
 
@@ -58,7 +59,7 @@ class SchemaRegistry:
         """
         return self._alias_map.get(alias.lower())
 
-    def infer_schema(self, data: Dict[str, Any]) -> Optional[Type[CoReasonBaseModel]]:
+    def infer_schema(self, data: Dict[str, Any]) -> Optional[Type[BaseModel]]:
         """
         Infers the schema type based on the content of the dictionary.
 
@@ -78,8 +79,19 @@ class SchemaRegistry:
 registry = SchemaRegistry()
 
 # Register known schemas
-registry.register("agent", AgentManifest, lambda d: "model_config" in d)
-registry.register("bec", BECManifest, lambda d: "corpus_id" in d)
-registry.register("topology", TopologyGraph, lambda d: "nodes" in d)
+# AgentDefinition has 'metadata' and 'interface'
+registry.register("agent", AgentDefinition, lambda d: "interface" in d and "metadata" in d)
+
+# RecipeManifest has 'graph' and 'inputs'
+# Mapping "bec" to RecipeManifest for backward compatibility/migration, assuming BEC scenarios use RecipeManifest
+registry.register("bec", RecipeManifest, lambda d: "graph" in d and "inputs" in d)
+registry.register("recipe", RecipeManifest) # Add new alias
+
+# Topology has 'nodes' and 'edges'
+registry.register("topology", Topology, lambda d: "nodes" in d and "edges" in d)
+
+# ToolCall (Legacy)
 registry.register("tool", ToolCall, lambda d: "tool_name" in d)
-registry.register("message", Message)
+
+# Message (Legacy)
+registry.register("message", Message, lambda d: "sender" in d and "receiver" in d)

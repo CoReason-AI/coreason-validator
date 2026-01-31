@@ -13,11 +13,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Type
 
-from coreason_validator.schemas.agent import AgentManifest
-from coreason_validator.schemas.base import CoReasonBaseModel
-from coreason_validator.schemas.bec import BECManifest
-from coreason_validator.schemas.tool import ToolCall
-from coreason_validator.schemas.topology import TopologyGraph
+from pydantic import BaseModel
+
+from coreason_manifest.definitions.agent import AgentDefinition
+from coreason_manifest.definitions.topology import Topology
+from coreason_manifest.recipes import RecipeManifest
+from coreason_validator.models import ToolCall
+
 from coreason_validator.utils.logger import logger
 from coreason_validator.validator import ValidationResult
 
@@ -32,7 +34,7 @@ def generate_validation_report(result: ValidationResult) -> Dict[str, Any]:
     Returns:
         A dictionary representation of the report.
     """
-    return result.model_dump()
+    return result.model_dump(mode="json")
 
 
 def export_json_schema(output_dir: Path) -> None:
@@ -47,10 +49,10 @@ def export_json_schema(output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Exporting JSON schemas to: {output_dir}")
 
-    schemas: dict[str, Type[CoReasonBaseModel]] = {
-        "agent": AgentManifest,
-        "topology": TopologyGraph,
-        "bec": BECManifest,
+    schemas: dict[str, Type[BaseModel]] = {
+        "agent": AgentDefinition,
+        "topology": Topology,
+        "bec": RecipeManifest,
         "tool": ToolCall,
     }
 

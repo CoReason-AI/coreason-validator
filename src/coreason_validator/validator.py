@@ -20,12 +20,15 @@ from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from coreason_validator.registry import registry
-from coreason_validator.schemas.base import CoReasonBaseModel
-from coreason_validator.schemas.message import Message
-from coreason_validator.schemas.tool import ToolCall
 from coreason_validator.utils.logger import logger
 
-T = TypeVar("T", bound=CoReasonBaseModel)
+# Import models from shared kernel
+from coreason_manifest.definitions.agent import AgentDefinition
+from coreason_manifest.recipes import RecipeManifest
+
+from coreason_validator.models import Message, ToolCall
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class ValidationResult(BaseModel):
@@ -78,7 +81,7 @@ def validate_object(
 
     Args:
         data: The input dictionary.
-        schema_type: The Pydantic model class (must inherit from CoReasonBaseModel) or a string alias.
+        schema_type: The Pydantic model class (must inherit from BaseModel) or a string alias.
         user_context: Optional user identity context.
 
     Returns:
@@ -94,12 +97,12 @@ def validate_object(
         found_class = registry.get_schema(schema_type)
         if not found_class:
             raise ValueError(f"Unknown schema type alias: '{schema_type}'")
-        # We need to cast because T is bound to CoReasonBaseModel but mypy needs help
+        # We need to cast because T is bound to BaseModel but mypy needs help
         schema_class = found_class  # type: ignore
-    elif isinstance(schema_type, type) and issubclass(schema_type, CoReasonBaseModel):
+    elif isinstance(schema_type, type) and issubclass(schema_type, BaseModel):
         schema_class = schema_type
     else:
-        raise ValueError("Invalid schema_type argument. Must be a CoReasonBaseModel subclass or a string alias.")
+        raise ValueError("Invalid schema_type argument. Must be a BaseModel subclass or a string alias.")
 
     logger.debug(f"Validating object against schema {schema_class.__name__}")
 
@@ -182,7 +185,7 @@ def check_compliance(instance: Dict[str, Any], schema: Dict[str, Any]) -> None:
 
 def validate_file(
     path: Union[str, Path],
-    schema_type: Optional[Union[Type[CoReasonBaseModel], str]] = None,
+    schema_type: Optional[Union[Type[BaseModel], str]] = None,
     user_context: Optional[UserContext] = None,
 ) -> ValidationResult:
     """
@@ -263,7 +266,7 @@ def validate_file(
         )
 
     # 2. Resolve Schema
-    schema_class: Optional[Type[CoReasonBaseModel]] = None
+    schema_class: Optional[Type[BaseModel]] = None
 
     if schema_type is None:
         # Inference Logic using Registry

@@ -24,12 +24,23 @@ def test_cli_check_json_valid_file(tmp_path: Path, capsys: pytest.CaptureFixture
     f = tmp_path / "agent.yaml"
     f.write_text(
         """
-        schema_version: "1.0"
-        name: "test-agent"
-        version: "1.0.0"
-        model_config: "gpt-4-turbo"
-        max_cost_limit: 10.0
-        topology: "topology.yaml"
+        metadata:
+          id: "123e4567-e89b-12d3-a456-426614174000"
+          version: "1.0.0"
+          name: "test-agent"
+          author: "tester"
+          created_at: "2025-01-01T00:00:00Z"
+        interface:
+          inputs: {}
+          outputs: {}
+        topology:
+          steps:
+            - id: "s1"
+          model_config:
+            model: "gpt-4-turbo"
+            temperature: 0.7
+        dependencies: {}
+        integrity_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         """
     )
 
@@ -43,7 +54,7 @@ def test_cli_check_json_valid_file(tmp_path: Path, capsys: pytest.CaptureFixture
     assert output["is_valid"] is True
     assert output["errors"] == []
     assert "model" in output
-    assert output["model"]["name"] == "test-agent"
+    assert output["model"]["metadata"]["name"] == "test-agent"
 
 
 def test_cli_check_json_invalid_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -53,12 +64,22 @@ def test_cli_check_json_invalid_file(tmp_path: Path, capsys: pytest.CaptureFixtu
     f = tmp_path / "agent_invalid.yaml"
     f.write_text(
         """
-        schema_version: "1.0"
-        name: "test-agent"
-        # Missing version
-        model_config: "gpt-4-turbo"
-        max_cost_limit: 10.0
-        topology: "topology.yaml"
+        metadata:
+          # Missing id
+          version: "1.0.0"
+          name: "test-agent"
+          author: "tester"
+          created_at: "2025-01-01T00:00:00Z"
+        interface:
+          inputs: {}
+          outputs: {}
+        topology:
+          steps: []
+          model_config:
+            model: "gpt-4-turbo"
+            temperature: 0.7
+        dependencies: {}
+        integrity_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         """
     )
 

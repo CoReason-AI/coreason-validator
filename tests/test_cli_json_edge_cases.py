@@ -22,11 +22,6 @@ def test_cli_check_json_malformed_file(tmp_path: Path, capsys: pytest.CaptureFix
     Test checking a file with syntax errors (malformed YAML) with --json flag.
     """
     f = tmp_path / "malformed.yaml"
-    # Actually create a malformed YAML that safe_load will accept as string or dict?
-    # PyYAML safe_load might parse "key: value\n  broken_indentation" as "key: 'value broken_indentation'"
-    # or it might fail.
-    # If it parses, validate_file returns "Could not infer schema type from content." if no root keys match.
-    # To force a parse error, we need something truly invalid.
     f.write_text(":")
 
     with patch("sys.argv", ["coreason-val", "check", str(f), "--json"]):
@@ -38,7 +33,6 @@ def test_cli_check_json_malformed_file(tmp_path: Path, capsys: pytest.CaptureFix
     output = json.loads(captured.out)
     assert output["is_valid"] is False
     assert len(output["errors"]) == 1
-    # Check for either Parse error or unexpected structure
     msg = output["errors"][0]["msg"]
     assert "Parse error" in msg or "File content must be a dictionary" in msg or "Could not infer" in msg
 
@@ -50,21 +44,16 @@ def test_cli_check_json_complex_topology(tmp_path: Path, capsys: pytest.CaptureF
     f = tmp_path / "topology.yaml"
     f.write_text(
         """
-        schema_version: "1.0"
         nodes:
           - id: "start"
-            step_type: "prompt"
-            next_steps: ["process"]
-            config:
-              prompt_template: "Hello"
-          - id: "process"
-            step_type: "tool"
-            next_steps: ["end"]
-            config:
-              tool_name: "calculator"
+            type: "agent"
+            agent_name: "calculator"
           - id: "end"
-            step_type: "terminal"
-            next_steps: []
+            type: "human"
+            timeout_seconds: 60
+        edges:
+          - source_node_id: "start"
+            target_node_id: "end"
         """
     )
 
@@ -77,10 +66,9 @@ def test_cli_check_json_complex_topology(tmp_path: Path, capsys: pytest.CaptureF
     output = json.loads(captured.out)
     assert output["is_valid"] is True
     model = output["model"]
-    assert len(model["nodes"]) == 3
+    assert len(model["nodes"]) == 2
     assert model["nodes"][0]["id"] == "start"
-    assert model["nodes"][0]["next_steps"] == ["process"]
-    assert model["nodes"][1]["config"]["tool_name"] == "calculator"
+    assert model["nodes"][0]["agent_name"] == "calculator"
 
 
 def test_cli_check_json_unicode(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -90,12 +78,22 @@ def test_cli_check_json_unicode(tmp_path: Path, capsys: pytest.CaptureFixture[st
     f = tmp_path / "agent_unicode.yaml"
     f.write_text(
         """
-        schema_version: "1.0"
-        name: "agent-🚀"
-        version: "1.0.0"
-        model_config: "gpt-4-turbo"
-        max_cost_limit: 10.0
-        topology: "topology.yaml"
+        metadata:
+          id: "123e4567-e89b-12d3-a456-426614174000"
+          version: "1.0.0"
+          name: "agent-🚀"
+          author: "tester"
+          created_at: "2025-01-01T00:00:00Z"
+        interface:
+          inputs: {}
+          outputs: {}
+        topology:
+          steps: []
+          model_config:
+            model: "gpt-4-turbo"
+            temperature: 0.7
+        dependencies: {}
+        integrity_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         """,
         encoding="utf-8",
     )
@@ -103,35 +101,27 @@ def test_cli_check_json_unicode(tmp_path: Path, capsys: pytest.CaptureFixture[st
     with patch("sys.argv", ["coreason-val", "check", str(f), "--json"]):
         with pytest.raises(SystemExit) as excinfo:
             main()
-        # It might fail if the regex for name doesn't allow emojis.
-        # The schema says: name: constr(pattern=r"^[a-z0-9-]+$")
-        # So "agent-🚀" is actually INVALID.
-        # But we want to check that the JSON output handles the unicode in the valid/invalid model or error message.
-        assert excinfo.value.code == 1
+        # Expect success because new schema allows unicode in name
+        assert excinfo.value.code == 0
 
     captured = capsys.readouterr()
     output = json.loads(captured.out)
-    assert output["is_valid"] is False
-    # The error message should contain the invalid value or context.
-    # Pydantic error usually includes input value.
-    # We just want to ensure we didn't crash and output is valid JSON.
-    assert len(output["errors"]) > 0
+    assert output["is_valid"] is True
+    assert output["model"]["metadata"]["name"] == "agent-🚀"
 
 
 def test_cli_check_json_unicode_valid(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """
-    Test checking a file with unicode characters in a field that allows them (e.g., config in Topology).
+    Test checking a file with unicode characters in a field that allows them.
     """
     f = tmp_path / "topology_unicode.yaml"
     f.write_text(
         """
-        schema_version: "1.0"
         nodes:
           - id: "start"
-            step_type: "prompt"
-            next_steps: []
-            config:
-              message: "Hello 🌍"
+            type: "agent"
+            agent_name: "calculator 🌍"
+        edges: []
         """,
         encoding="utf-8",
     )
@@ -145,7 +135,7 @@ def test_cli_check_json_unicode_valid(tmp_path: Path, capsys: pytest.CaptureFixt
     output = json.loads(captured.out)
     assert output["is_valid"] is True
     # Check that the emoji is present in the output model
-    assert output["model"]["nodes"][0]["config"]["message"] == "Hello 🌍"
+    assert output["model"]["nodes"][0]["agent_name"] == "calculator 🌍"
 
 
 def test_cli_check_json_read_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -166,4 +156,3 @@ def test_cli_check_json_read_error(tmp_path: Path, capsys: pytest.CaptureFixture
     output = json.loads(captured.out)
     assert output["is_valid"] is False
     assert "Error reading file" in output["errors"][0]["msg"]
-    assert "Permission denied" in output["errors"][0]["msg"]

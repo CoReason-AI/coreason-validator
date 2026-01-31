@@ -14,8 +14,8 @@ from typing import Any, Dict
 import pytest
 from pydantic import ValidationError
 
-from coreason_validator.schemas.base import CoReasonBaseModel
-from coreason_validator.schemas.message import Message
+from pydantic import BaseModel as CoReasonBaseModel
+from coreason_validator.models import Message
 from coreason_validator.validator import validate_message, validate_object
 
 

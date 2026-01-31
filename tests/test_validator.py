@@ -11,8 +11,8 @@
 import pytest
 from pydantic import ValidationError
 
-from coreason_validator.schemas.agent import AgentManifest
-from coreason_validator.schemas.tool import ToolCall
+from coreason_manifest.definitions.agent import AgentDefinition
+from coreason_validator.models import ToolCall
 from coreason_validator.validator import sanitize_inputs, validate_object
 
 
@@ -47,20 +47,35 @@ def test_sanitize_inputs_tuple_set() -> None:
 
 
 def test_validate_object_success() -> None:
-    """Test successful validation of an AgentManifest."""
+    """Test successful validation of an AgentDefinition."""
     data = {
-        "schema_version": "1.0",
-        "name": "my-agent",
-        "version": "1.0.0",
-        "model_config": "gpt-4-turbo",
-        "max_cost_limit": 10.0,
-        "topology": "path/to/topo.json",
+        "metadata": {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "version": "1.0.0",
+            "name": "my-agent",
+            "author": "tester",
+            "created_at": "2025-01-01T00:00:00Z"
+        },
+        "interface": {
+            "inputs": {},
+            "outputs": {}
+        },
+        "topology": {
+            "steps": [
+                {"id": "step1", "description": "start"}
+            ],
+            "model_config": {
+                "model": "gpt-4-turbo",
+                "temperature": 0.7
+            }
+        },
+        "dependencies": {},
+        "integrity_hash": "a" * 64
     }
-    agent = validate_object(data, AgentManifest)
-    assert isinstance(agent, AgentManifest)
-    assert agent.name == "my-agent"
-    assert agent.max_cost_limit == 10.0
-    assert agent.topology == "path/to/topo.json"
+    agent = validate_object(data, AgentDefinition)
+    assert isinstance(agent, AgentDefinition)
+    assert agent.metadata.name == "my-agent"
+    assert agent.topology.llm_config.model == "gpt-4-turbo"
 
 
 def test_validate_object_sanitization_integration() -> None:
