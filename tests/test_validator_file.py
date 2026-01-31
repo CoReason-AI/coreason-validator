@@ -11,16 +11,15 @@
 import json
 import tempfile
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 from unittest.mock import patch
 
 import pytest
 import yaml
-
 from coreason_manifest.definitions.agent import AgentDefinition
-from coreason_manifest.recipes import RecipeManifest
-from coreason_validator.models import ToolCall
 from coreason_manifest.definitions.topology import Topology
+from coreason_manifest.recipes import RecipeManifest
+
 from coreason_validator.validator import validate_file
 
 
@@ -31,26 +30,23 @@ def temp_dir() -> Iterator[Path]:
 
 
 @pytest.fixture
-def valid_agent_data() -> dict:
+def valid_agent_data() -> dict[str, Any]:
     return {
         "metadata": {
             "id": "123e4567-e89b-12d3-a456-426614174000",
             "version": "1.0.0",
             "name": "test-agent",
             "author": "tester",
-            "created_at": "2025-01-01T00:00:00Z"
+            "created_at": "2025-01-01T00:00:00Z",
         },
         "interface": {"inputs": {}, "outputs": {}},
-        "topology": {
-            "steps": [{"id": "s1"}],
-            "model_config": {"model": "gpt-4-turbo", "temperature": 0.7}
-        },
+        "topology": {"steps": [{"id": "s1"}], "model_config": {"model": "gpt-4-turbo", "temperature": 0.7}},
         "dependencies": {},
-        "integrity_hash": "a" * 64
+        "integrity_hash": "a" * 64,
     }
 
 
-def test_validate_file_json_success(temp_dir: Path, valid_agent_data: dict) -> None:
+def test_validate_file_json_success(temp_dir: Path, valid_agent_data: dict[str, Any]) -> None:
     """Test validating a valid JSON file."""
     file_path = temp_dir / "agent.json"
     file_path.write_text(json.dumps(valid_agent_data))
@@ -63,7 +59,7 @@ def test_validate_file_json_success(temp_dir: Path, valid_agent_data: dict) -> N
     assert not result.errors
 
 
-def test_validate_file_yaml_success(temp_dir: Path, valid_agent_data: dict) -> None:
+def test_validate_file_yaml_success(temp_dir: Path, valid_agent_data: dict[str, Any]) -> None:
     """Test validating a valid YAML file."""
     valid_agent_data["metadata"]["name"] = "test-agent-yaml"
     file_path = temp_dir / "agent.yaml"
@@ -75,7 +71,7 @@ def test_validate_file_yaml_success(temp_dir: Path, valid_agent_data: dict) -> N
     assert result.model.metadata.name == "test-agent-yaml"
 
 
-def test_validate_file_schema_inference(temp_dir: Path, valid_agent_data: dict) -> None:
+def test_validate_file_schema_inference(temp_dir: Path, valid_agent_data: dict[str, Any]) -> None:
     """Test inferring schema from file content."""
     # AgentDefinition has 'metadata' and 'interface'
     valid_agent_data["metadata"]["name"] = "inferred-agent"
@@ -92,10 +88,7 @@ def test_validate_file_schema_inference(temp_dir: Path, valid_agent_data: dict) 
         "version": "1.0.0",
         "name": "My Recipe",
         "inputs": {},
-        "graph": {
-            "nodes": [],
-            "edges": []
-        }
+        "graph": {"nodes": [], "edges": []},
     }
     bec_path = temp_dir / "bec.json"
     bec_path.write_text(json.dumps(recipe_data))
@@ -106,9 +99,9 @@ def test_validate_file_schema_inference(temp_dir: Path, valid_agent_data: dict) 
 
 
 def test_validate_file_inference_more_types(temp_dir: Path) -> None:
-    """Test inference for Topology and ToolCall."""
+    """Test inference for Topology."""
     # Topology (GraphTopology) has 'nodes' and 'edges'
-    topo_data = {"nodes": [], "edges": []}
+    topo_data: dict[str, Any] = {"nodes": [], "edges": []}
     topo_path = temp_dir / "topo.json"
     topo_path.write_text(json.dumps(topo_data))
 
@@ -116,22 +109,13 @@ def test_validate_file_inference_more_types(temp_dir: Path) -> None:
     assert res_topo.is_valid
     assert isinstance(res_topo.model, Topology)
 
-    # ToolCall
-    tool_data = {"tool_name": "search", "arguments": {"q": "foo"}}
-    tool_path = temp_dir / "tool.json"
-    tool_path.write_text(json.dumps(tool_data))
-
-    res_tool = validate_file(tool_path)
-    assert res_tool.is_valid
-    assert isinstance(res_tool.model, ToolCall)
-
 
 def test_validate_file_validation_error(temp_dir: Path) -> None:
     """Test validation failure returns structured errors."""
     data = {
         "metadata": {
-             "name": "bad-agent"
-             # Missing version, id, etc.
+            "name": "bad-agent"
+            # Missing version, id, etc.
         }
     }
     file_path = temp_dir / "invalid.json"
@@ -171,7 +155,7 @@ def test_validate_file_read_error(temp_dir: Path) -> None:
 
 def test_validate_file_unknown_schema(temp_dir: Path) -> None:
     """Test failure when schema cannot be inferred."""
-    data = {"some": "random data"}
+    data: dict[str, Any] = {"some": "random data"}
     file_path = temp_dir / "unknown.yaml"
     file_path.write_text(yaml.dump(data))
 
@@ -198,7 +182,7 @@ def test_validate_file_not_dict(temp_dir: Path) -> None:
     assert "must be a dictionary" in str(result.errors)
 
 
-def test_validate_file_fallback_parsing(temp_dir: Path, valid_agent_data: dict) -> None:
+def test_validate_file_fallback_parsing(temp_dir: Path, valid_agent_data: dict[str, Any]) -> None:
     """Test parsing a file with unknown extension."""
     valid_agent_data["metadata"]["name"] = "txt-agent"
 
@@ -233,7 +217,7 @@ def test_validate_file_invalid_schema_arg(temp_dir: Path) -> None:
     file_path = temp_dir / "agent.json"
     file_path.write_text("{}")
 
-    result = validate_file(file_path, schema_type=123)  # type: ignore
+    result = validate_file(file_path, schema_type=123)
     assert not result.is_valid
     assert "Invalid schema_type" in str(result.errors)
 

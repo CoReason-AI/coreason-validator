@@ -16,17 +16,13 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 import jsonschema
 import yaml
 from coreason_identity.models import UserContext
+
+# Import models from shared kernel
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from coreason_validator.registry import registry
 from coreason_validator.utils.logger import logger
-
-# Import models from shared kernel
-from coreason_manifest.definitions.agent import AgentDefinition
-from coreason_manifest.recipes import RecipeManifest
-
-from coreason_validator.models import Message, ToolCall
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -117,38 +113,6 @@ def validate_object(
         raise
 
 
-def validate_tool_call(tool_call_data: Dict[str, Any]) -> ToolCall:
-    """
-    Validates a tool call payload.
-    A wrapper around validate_object specifically for ToolCall.
-
-    Args:
-        tool_call_data: The dictionary containing tool name and arguments.
-
-    Returns:
-        Validated ToolCall object.
-
-    Raises:
-        ValidationError: If validation fails.
-    """
-    return validate_object(tool_call_data, ToolCall)
-
-
-def validate_message(message_data: Dict[str, Any]) -> Message:
-    """
-    Validates an inter-agent message payload.
-    A wrapper around validate_object specifically for Message.
-
-    Args:
-        message_data: The dictionary containing message fields.
-
-    Returns:
-        Validated Message object.
-
-    Raises:
-        ValidationError: If validation fails.
-    """
-    return validate_object(message_data, Message)
 
 
 def check_compliance(instance: Dict[str, Any], schema: Dict[str, Any]) -> None:
@@ -193,7 +157,7 @@ def validate_file(
 
     Args:
         path: Path to the file.
-        schema_type: The Pydantic model class, or a string alias ('agent', 'topology', 'bec', 'tool'), or None to infer.
+        schema_type: The Pydantic model class, or a string alias ('agent', 'topology', 'bec'), or None to infer.
         user_context: Optional user identity context.
 
     Returns:

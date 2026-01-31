@@ -10,13 +10,10 @@
 
 from typing import Any, Callable, Dict, Optional, Type
 
-from pydantic import BaseModel
-
 from coreason_manifest.definitions.agent import AgentDefinition
 from coreason_manifest.definitions.topology import Topology
 from coreason_manifest.recipes import RecipeManifest
-
-from coreason_validator.models import Message, ToolCall
+from pydantic import BaseModel
 
 
 class SchemaRegistry:
@@ -85,13 +82,7 @@ registry.register("agent", AgentDefinition, lambda d: "interface" in d and "meta
 # RecipeManifest has 'graph' and 'inputs'
 # Mapping "bec" to RecipeManifest for backward compatibility/migration, assuming BEC scenarios use RecipeManifest
 registry.register("bec", RecipeManifest, lambda d: "graph" in d and "inputs" in d)
-registry.register("recipe", RecipeManifest) # Add new alias
+registry.register("recipe", RecipeManifest)  # Add new alias
 
 # Topology has 'nodes' and 'edges'
 registry.register("topology", Topology, lambda d: "nodes" in d and "edges" in d)
-
-# ToolCall (Legacy)
-registry.register("tool", ToolCall, lambda d: "tool_name" in d)
-
-# Message (Legacy)
-registry.register("message", Message, lambda d: "sender" in d and "receiver" in d)

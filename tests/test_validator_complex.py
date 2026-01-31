@@ -25,19 +25,16 @@ def test_ambiguous_inference(tmp_path: Path) -> None:
             "version": "1.0.0",
             "name": "ambiguous",
             "author": "tester",
-            "created_at": "2025-01-01T00:00:00Z"
+            "created_at": "2025-01-01T00:00:00Z",
         },
         "interface": {},
         # Recipe fields
         "graph": {"nodes": [], "edges": []},
         "inputs": {},
         # Agent required fields to make it "almost" valid agent if chosen
-        "topology": {
-             "steps": [{"id": "s1"}],
-             "model_config": {"model": "gpt-4", "temperature": 0.7}
-        },
+        "topology": {"steps": [{"id": "s1"}], "model_config": {"model": "gpt-4", "temperature": 0.7}},
         "dependencies": {},
-        "integrity_hash": "a"*64,
+        "integrity_hash": "a" * 64,
         # Recipe required fields
         # RecipeManifest also requires id, version, name, description.
         # id, version, name are in metadata for Agent, but top-level for Recipe.

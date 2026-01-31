@@ -1,20 +1,31 @@
 from pathlib import Path
-
+import json
 from coreason_identity.models import UserContext
 
 from coreason_validator.validator import validate_file
 
 
 def test_validation_with_user_context(tmp_path: Path) -> None:
-    # Create a valid tool call file
-    p = tmp_path / "tool.json"
-    p.write_text('{"tool_name": "my_tool", "arguments": {"x": 1}}')
+    # Create a valid Agent file (ToolCall is removed)
+    data = {
+        "metadata": {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "version": "1.0.0",
+            "name": "test-agent",
+            "author": "tester",
+            "created_at": "2025-01-01T00:00:00Z"
+        },
+        "interface": {"inputs": {}, "outputs": {}},
+        "topology": {"steps": [{"id": "s1"}], "model_config": {"model": "gpt-4", "temperature": 0.7}},
+        "dependencies": {},
+        "integrity_hash": "a"*64
+    }
+    p = tmp_path / "agent.json"
+    p.write_text(json.dumps(data))
 
     ctx = UserContext(user_id="auth0|123", email="test@coreason.ai", groups=["admin"])
 
-    # We need to specify schema_type because inference might fail or pick something else if ambiguous,
-    # but 'tool' is explicit.
-    result = validate_file(p, schema_type="tool", user_context=ctx)
+    result = validate_file(p, schema_type="agent", user_context=ctx)
 
     assert result.is_valid, f"Errors: {result.errors}"
     assert result.validation_metadata["validated_by"] == "auth0|123 (test@coreason.ai)"
@@ -24,10 +35,24 @@ def test_validation_with_user_context(tmp_path: Path) -> None:
 
 
 def test_validation_without_user_context(tmp_path: Path) -> None:
-    p = tmp_path / "tool.json"
-    p.write_text('{"tool_name": "my_tool", "arguments": {"x": 1}}')
+    # Create a valid Agent file
+    data = {
+        "metadata": {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "version": "1.0.0",
+            "name": "test-agent",
+            "author": "tester",
+            "created_at": "2025-01-01T00:00:00Z"
+        },
+        "interface": {"inputs": {}, "outputs": {}},
+        "topology": {"steps": [{"id": "s1"}], "model_config": {"model": "gpt-4", "temperature": 0.7}},
+        "dependencies": {},
+        "integrity_hash": "a"*64
+    }
+    p = tmp_path / "agent.json"
+    p.write_text(json.dumps(data))
 
-    result = validate_file(p, schema_type="tool", user_context=None)
+    result = validate_file(p, schema_type="agent", user_context=None)
 
     assert result.is_valid, f"Errors: {result.errors}"
     assert result.validation_metadata["validated_by"] == "SYSTEM_AUTOMATION"

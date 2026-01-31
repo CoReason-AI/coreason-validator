@@ -9,10 +9,8 @@
 # Source Code: https://github.com/CoReason-AI/coreason_validator
 
 import pytest
-from pydantic import ValidationError
-
 from coreason_manifest.definitions.agent import AgentDefinition
-from coreason_validator.models import ToolCall
+
 from coreason_validator.validator import sanitize_inputs, validate_object
 
 
@@ -54,23 +52,15 @@ def test_validate_object_success() -> None:
             "version": "1.0.0",
             "name": "my-agent",
             "author": "tester",
-            "created_at": "2025-01-01T00:00:00Z"
+            "created_at": "2025-01-01T00:00:00Z",
         },
-        "interface": {
-            "inputs": {},
-            "outputs": {}
-        },
+        "interface": {"inputs": {}, "outputs": {}},
         "topology": {
-            "steps": [
-                {"id": "step1", "description": "start"}
-            ],
-            "model_config": {
-                "model": "gpt-4-turbo",
-                "temperature": 0.7
-            }
+            "steps": [{"id": "step1", "description": "start"}],
+            "model_config": {"model": "gpt-4-turbo", "temperature": 0.7},
         },
         "dependencies": {},
-        "integrity_hash": "a" * 64
+        "integrity_hash": "a" * 64,
     }
     agent = validate_object(data, AgentDefinition)
     assert isinstance(agent, AgentDefinition)
@@ -78,35 +68,3 @@ def test_validate_object_success() -> None:
     assert agent.topology.llm_config.model == "gpt-4-turbo"
 
 
-def test_validate_object_sanitization_integration() -> None:
-    """Test that validate_object correctly sanitizes inputs before validation."""
-    data = {"tool_name": "  search  ", "arguments": {"query": "  something  "}}
-    tool = validate_object(data, ToolCall)
-    assert tool.tool_name == "search"
-    assert tool.arguments["query"] == "something"
-
-
-def test_validate_object_failure_missing_field() -> None:
-    """Test validation failure for missing fields."""
-    data = {
-        "tool_name": "search"
-        # Missing arguments
-    }
-    with pytest.raises(ValidationError) as excinfo:
-        validate_object(data, ToolCall)
-    assert "arguments" in str(excinfo.value)
-
-
-def test_validate_object_failure_invalid_type() -> None:
-    """Test validation failure for invalid types."""
-    data = {"tool_name": "search", "arguments": "not-a-dict"}
-    with pytest.raises(ValidationError) as excinfo:
-        validate_object(data, ToolCall)
-    assert "arguments" in str(excinfo.value)
-
-
-def test_validate_object_sql_injection() -> None:
-    """Test that validate_object catches SQL injection patterns via ToolCall schema."""
-    data = {"tool_name": "db_tool", "arguments": {"query": "SELECT * FROM users; DROP TABLE users;"}}
-    with pytest.raises(ValidationError, match="Potential SQL injection"):
-        validate_object(data, ToolCall)

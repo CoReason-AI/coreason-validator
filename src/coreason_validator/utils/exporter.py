@@ -13,12 +13,10 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Type
 
-from pydantic import BaseModel
-
 from coreason_manifest.definitions.agent import AgentDefinition
 from coreason_manifest.definitions.topology import Topology
 from coreason_manifest.recipes import RecipeManifest
-from coreason_validator.models import ToolCall
+from pydantic import BaseModel
 
 from coreason_validator.utils.logger import logger
 from coreason_validator.validator import ValidationResult
@@ -53,7 +51,6 @@ def export_json_schema(output_dir: Path) -> None:
         "agent": AgentDefinition,
         "topology": Topology,
         "bec": RecipeManifest,
-        "tool": ToolCall,
     }
 
     for name, model_class in schemas.items():
