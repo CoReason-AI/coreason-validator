@@ -134,9 +134,7 @@ def test_secure_agent_full_config() -> None:
             "injected_params": ["user_context", "trace_id"],
         },
         "config": {
-            "nodes": [
-                {"type": "agent", "id": "entry", "agent_name": "core"}
-            ],
+            "nodes": [{"type": "agent", "id": "entry", "agent_name": "core"}],
             "edges": [],
             "entry_point": "entry",
             "model_config": {"model": "claude-3-opus", "temperature": 0.1},
@@ -145,7 +143,7 @@ def test_secure_agent_full_config() -> None:
             "tools": [
                 {
                     "uri": "https://mcp.coreason.ai/tools/calculator",
-                    "hash": "b" * 64, # Fake hash
+                    "hash": "b" * 64,  # Fake hash
                     "scopes": ["math:read", "math:calc"],
                     "risk_level": "safe",
                 },
