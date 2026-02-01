@@ -10,8 +10,9 @@
 
 from typing import Literal
 
+from pydantic import BaseModel as CoReasonBaseModel
+
 from coreason_validator.registry import SchemaRegistry, registry
-from coreason_validator.schemas.base import CoReasonBaseModel
 from coreason_validator.validator import validate_object
 
 
@@ -126,10 +127,10 @@ def test_complex_dynamic_runtime_extension() -> None:
 
     finally:
         # Cleanup: Remove the entry to avoid side effects
-        if alias in registry._alias_map:
-            del registry._alias_map[alias]
-        if RuntimeSchema in registry._detectors:
-            del registry._detectors[RuntimeSchema]
+        if alias in registry._schemas:
+            del registry._schemas[alias]
+        if alias in registry._detectors:
+            del registry._detectors[alias]
 
 
 def test_registry_unknown_alias() -> None:

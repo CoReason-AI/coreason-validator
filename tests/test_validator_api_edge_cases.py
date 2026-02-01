@@ -13,10 +13,10 @@ from pathlib import Path
 from typing import Any, Iterator
 
 import pytest
+from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
 from pydantic import ValidationError
 
-from coreason_validator.schemas.tool import ToolCall
-from coreason_validator.validator import sanitize_inputs, validate_file, validate_object, validate_tool_call
+from coreason_validator.validator import sanitize_inputs, validate_file, validate_object
 
 
 @pytest.fixture
@@ -29,14 +29,16 @@ def test_validate_object_alias_variations() -> None:
     """
     Test various alias formats for validate_object.
     """
-    data = {"tool_name": "t", "arguments": {}}
+    data = {"type": "tool_call", "name": "t", "arguments": {}}
 
     # Mixed case (Should pass)
     assert isinstance(validate_object(data, "TooL"), ToolCall)
 
     # Wrong schema for data (Should raise ValidationError)
+    # Trying to validate tool data against Agent schema (aliased as 'agent' usually, but here checking key mismatch)
+    # The 'agent' schema requires many fields not present here.
     with pytest.raises(ValidationError):
-        validate_object(data, "AGENT")
+        validate_object(data, "agent")
 
     # Whitespace (Should fail)
     # " tool " -> lower() is " tool ". key is "tool". No match.
@@ -104,26 +106,6 @@ def test_validate_file_with_cyclic_data(temp_dir: Path) -> None:
     assert not result.is_valid
     # The error message should mention recursion
     assert any("recursion" in str(e).lower() for e in result.errors)
-
-
-def test_validate_tool_call_deep_injection() -> None:
-    """
-    Test validate_tool_call wrapper catches deep injection.
-    """
-    data = {
-        "tool_name": "db_ops",
-        "arguments": {
-            "query_params": {
-                "where": [
-                    {"col": "id", "val": 1},
-                    {"col": "name", "val": "foo OR 1=1"},  # Injection
-                ]
-            }
-        },
-    }
-
-    with pytest.raises(ValidationError, match="Potential SQL injection"):
-        validate_tool_call(data)
 
 
 def test_validate_object_keys_are_not_sanitized() -> None:

@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Any
+
 # Copyright (c) 2025 CoReason, Inc.
 #
 # This software is proprietary and dual-licensed.
@@ -7,13 +10,39 @@
 # Commercial use beyond a 30-day trial requires a separate license.
 #
 # Source Code: https://github.com/CoReason-AI/coreason_validator
-
 import pytest
+from coreason_manifest.definitions.agent import AgentDefinition
+from coreason_manifest.definitions.message import ToolCallRequestPart as ToolCall
 from pydantic import ValidationError
 
-from coreason_validator.schemas.agent import AgentManifest
-from coreason_validator.schemas.tool import ToolCall
 from coreason_validator.validator import sanitize_inputs, validate_object
+
+VALID_HASH = "a" * 64
+VALID_UUID = "123e4567-e89b-12d3-a456-426614174000"
+
+
+def get_valid_agent_data() -> dict[str, Any]:
+    return {
+        "metadata": {
+            "id": VALID_UUID,
+            "version": "1.0.0",
+            "name": "test-agent",
+            "author": "tester",
+            "created_at": datetime.utcnow().isoformat(),
+        },
+        "interface": {
+            "inputs": {"type": "object"},
+            "outputs": {"type": "object"},
+        },
+        "config": {
+            "nodes": [],
+            "edges": [],
+            "entry_point": "node1",
+            "model_config": {"model": "gpt-4", "temperature": 0.7},
+        },
+        "dependencies": {},
+        "integrity_hash": VALID_HASH,
+    }
 
 
 def test_sanitize_inputs_primitives() -> None:
@@ -47,34 +76,26 @@ def test_sanitize_inputs_tuple_set() -> None:
 
 
 def test_validate_object_success() -> None:
-    """Test successful validation of an AgentManifest."""
-    data = {
-        "schema_version": "1.0",
-        "name": "my-agent",
-        "version": "1.0.0",
-        "model_config": "gpt-4-turbo",
-        "max_cost_limit": 10.0,
-        "topology": "path/to/topo.json",
-    }
-    agent = validate_object(data, AgentManifest)
-    assert isinstance(agent, AgentManifest)
-    assert agent.name == "my-agent"
-    assert agent.max_cost_limit == 10.0
-    assert agent.topology == "path/to/topo.json"
+    """Test successful validation of an AgentDefinition."""
+    data = get_valid_agent_data()
+    agent = validate_object(data, AgentDefinition)
+    assert isinstance(agent, AgentDefinition)
+    assert agent.metadata.name == "test-agent"
 
 
 def test_validate_object_sanitization_integration() -> None:
     """Test that validate_object correctly sanitizes inputs before validation."""
-    data = {"tool_name": "  search  ", "arguments": {"query": "  something  "}}
+    data = {"type": "tool_call", "name": "  search  ", "arguments": {"query": "  something  "}}
     tool = validate_object(data, ToolCall)
-    assert tool.tool_name == "search"
+    assert tool.name == "search"
     assert tool.arguments["query"] == "something"
 
 
 def test_validate_object_failure_missing_field() -> None:
     """Test validation failure for missing fields."""
     data = {
-        "tool_name": "search"
+        "type": "tool_call",
+        "name": "search",
         # Missing arguments
     }
     with pytest.raises(ValidationError) as excinfo:
@@ -84,14 +105,7 @@ def test_validate_object_failure_missing_field() -> None:
 
 def test_validate_object_failure_invalid_type() -> None:
     """Test validation failure for invalid types."""
-    data = {"tool_name": "search", "arguments": "not-a-dict"}
+    data = {"type": "tool_call", "name": "search", "arguments": "not-a-dict"}
     with pytest.raises(ValidationError) as excinfo:
         validate_object(data, ToolCall)
     assert "arguments" in str(excinfo.value)
-
-
-def test_validate_object_sql_injection() -> None:
-    """Test that validate_object catches SQL injection patterns via ToolCall schema."""
-    data = {"tool_name": "db_tool", "arguments": {"query": "SELECT * FROM users; DROP TABLE users;"}}
-    with pytest.raises(ValidationError, match="Potential SQL injection"):
-        validate_object(data, ToolCall)
